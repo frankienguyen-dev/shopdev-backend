@@ -1,8 +1,8 @@
-package com.frankie.ecommerce_project.mapper.user;
+package com.frankie.ecommerce_project.mapper;
 
-
-import com.frankie.ecommerce_project.dto.user.request.CreateUserDto;
+import com.frankie.ecommerce_project.dto.user.common.UserInfo;
 import com.frankie.ecommerce_project.dto.user.response.CreateUserResponse;
+import com.frankie.ecommerce_project.dto.user.response.UpdateUserResponse;
 import com.frankie.ecommerce_project.model.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
@@ -11,10 +11,9 @@ import org.mapstruct.factory.Mappers;
 public interface UserMapper {
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
-    // CreateUserDto to User
-    CreateUserDto toCreateUserDto(User user);
-    // User to CreateUserDto
-    User toUser(CreateUserDto createUserDto);
-    // User to CreateUserResponse
     CreateUserResponse toCreateUserResponse(User user);
+
+    UserInfo toUserInfo(User user);
+
+    UpdateUserResponse toUpdateUserResponse(User user);
 }
