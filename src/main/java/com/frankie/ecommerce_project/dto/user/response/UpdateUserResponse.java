@@ -6,12 +6,12 @@ import lombok.*;
 import java.time.Instant;
 import java.time.LocalDate;
 
-@Getter
 @Setter
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class CreateUserResponse {
+public class UpdateUserResponse {
     private String id;
     private String fullName;
     private String email;
@@ -20,7 +20,6 @@ public class CreateUserResponse {
     private String avatar;
     private LocalDate dateOfBirth;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
-    private Instant createdAt;
-    private String createdBy;
-    private Boolean isActive;
+    private Instant updatedAt;
+    private String updatedBy;
 }
