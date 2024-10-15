@@ -187,10 +187,6 @@ public class UserServiceImpl implements UserService {
                 .totalPages(users.getTotalPages())
                 .lastPage(users.isLast())
                 .build();
-        return UserListResponse.builder()
-                .meta(metaData)
-                .data(userListResponses)
-                .build();
-
+        return UserListResponse.builder().meta(metaData).data(userListResponses).build();
     }
 }
