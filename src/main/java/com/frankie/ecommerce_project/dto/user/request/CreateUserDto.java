@@ -1,8 +1,10 @@
 package com.frankie.ecommerce_project.dto.user.request;
 
+import com.frankie.ecommerce_project.dto.role.common.RoleName;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,6 +17,7 @@ public class CreateUserDto {
     private String email;
     private String password;
     private String phoneNumber;
+    private List<RoleName> roles;
     private String address;
     private String avatar;
     private LocalDate dateOfBirth;

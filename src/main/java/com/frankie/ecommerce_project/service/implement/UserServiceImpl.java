@@ -1,12 +1,15 @@
 package com.frankie.ecommerce_project.service.implement;
 
+import com.frankie.ecommerce_project.dto.role.common.RoleName;
 import com.frankie.ecommerce_project.dto.user.common.UserInfo;
 import com.frankie.ecommerce_project.dto.user.request.CreateUserDto;
 import com.frankie.ecommerce_project.dto.user.request.UpdateUserDto;
 import com.frankie.ecommerce_project.dto.user.response.*;
 import com.frankie.ecommerce_project.exception.ResourceNotFoundException;
 import com.frankie.ecommerce_project.mapper.UserMapper;
+import com.frankie.ecommerce_project.model.Role;
 import com.frankie.ecommerce_project.model.User;
+import com.frankie.ecommerce_project.repository.RoleRepository;
 import com.frankie.ecommerce_project.repository.UserRepository;
 import com.frankie.ecommerce_project.service.UserService;
 import com.frankie.ecommerce_project.utils.BuildPageable;
@@ -19,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,11 +31,14 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                           RoleRepository roleRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.roleRepository = roleRepository;
     }
 
     @Override
@@ -41,12 +48,14 @@ public class UserServiceImpl implements UserService {
             if (findUserByEmail.isPresent()) {
                 return ApiResponse.error("Email already exists", HttpStatus.BAD_REQUEST, null);
             }
+            List<Role> roles = buildRoleList(createUserDto.getRoles());
             User newUser = User.builder()
                     .id(createUserDto.getId())
                     .fullName(createUserDto.getFullName())
                     .email(createUserDto.getEmail())
                     .password(passwordEncoder.encode(createUserDto.getPassword()))
                     .phoneNumber(createUserDto.getPhoneNumber())
+                    .roles(roles)
                     .address(createUserDto.getAddress())
                     .avatar(createUserDto.getAvatar() != null && !createUserDto.getAvatar().isEmpty() ? createUserDto.getAvatar() : null)
                     .dateOfBirth(createUserDto.getDateOfBirth())
@@ -60,6 +69,16 @@ public class UserServiceImpl implements UserService {
             System.out.println("Error: " + e.getMessage());
             throw e;
         }
+    }
+
+    private List<Role> buildRoleList(List<RoleName> roles) {
+        List<Role> roleList = new ArrayList<>();
+        for (RoleName roleName : roles) {
+            Optional<Role> findRole = roleRepository.findByName(roleName.getName());
+            if (findRole.isPresent()) roleList.add(findRole.get());
+            else throw new ResourceNotFoundException("Role", "name", roleName.getName());
+        }
+        return roleList;
     }
 
     @Override
@@ -98,12 +117,14 @@ public class UserServiceImpl implements UserService {
                 return ApiResponse.error("Email already exists", HttpStatus.BAD_REQUEST, null);
             }
         }
+        List<Role> roles = buildRoleList(updateUserDto.getRoles());
         findUser.setFullName(updateUserDto.getFullName());
         findUser.setEmail(updateUserDto.getEmail());
         findUser.setPhoneNumber(updateUserDto.getPhoneNumber());
         findUser.setAddress(updateUserDto.getAddress());
         findUser.setAvatar(updateUserDto.getAvatar());
         findUser.setDateOfBirth(updateUserDto.getDateOfBirth());
+        findUser.setRoles(roles);
         userRepository.save(findUser);
         UpdateUserResponse userDtoMapping = UserMapper.INSTANCE.toUpdateUserResponse(findUser);
         return ApiResponse.success(
