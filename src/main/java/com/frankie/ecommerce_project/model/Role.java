@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -19,13 +20,15 @@ public class Role {
     @Id
     private String id;
     private String name;
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "roles")
+    private List<User> user;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant createdAt;
     private String createdBy;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant updatedAt;
     private String updatedBy;
-    private Boolean isDeleted;
+    private Boolean isDeleted = false;
 
     @PrePersist
     private void handleCreateRole() {

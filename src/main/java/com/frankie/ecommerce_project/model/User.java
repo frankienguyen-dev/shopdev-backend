@@ -9,6 +9,8 @@ import lombok.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -31,15 +33,21 @@ public class User {
     private String address;
     private String avatar;
     private LocalDate dateOfBirth;
-
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private List<Role> roles = new LinkedList<>();
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant createdAt;
     private String createdBy;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant updatedAt;
     private String updatedBy;
-    private Boolean isDeleted;
-    private Boolean isActive;
+    private Boolean isDeleted = false;
+    private Boolean isActive = true;
 
     @PrePersist
     private void handleCreateUser() {
