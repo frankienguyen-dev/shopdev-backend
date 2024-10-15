@@ -1,4 +1,4 @@
-package com.frankie.ecommerce_project.dto.user.response;
+package com.frankie.ecommerce_project.dto.role.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
@@ -10,10 +10,9 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ReactivateUserAccount {
+public class DeleteRoleResponse {
     private String id;
     private Boolean isDeleted;
-    private Boolean isActive;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant updatedAt;
     private String updatedBy;

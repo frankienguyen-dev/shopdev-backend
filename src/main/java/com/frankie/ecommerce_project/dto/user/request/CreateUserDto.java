@@ -18,5 +18,4 @@ public class CreateUserDto {
     private String address;
     private String avatar;
     private LocalDate dateOfBirth;
-    private Boolean isActive;
 }

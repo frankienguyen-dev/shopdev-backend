@@ -76,7 +76,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(searchListUser);
     }
 
-    @PatchMapping("/reactivate/{id}")
+    @PatchMapping("/deactivate/{id}")
     public ResponseEntity<ApiResponse<ReactivateUserAccount>> reactivateUserAccount(@PathVariable String id) {
         ApiResponse<ReactivateUserAccount> reactivateUser = userService.reactivateUserAccount(id);
         return ResponseEntity.status(HttpStatus.OK).body(reactivateUser);
