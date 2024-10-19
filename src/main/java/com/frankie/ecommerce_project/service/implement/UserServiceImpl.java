@@ -159,7 +159,7 @@ public class UserServiceImpl implements UserService {
     public ApiResponse<UserListResponse> searchUserByEmail(int pageNo, int pageSize,
                                                            String sortBy, String sortDir, String email) {
         Pageable pageable = BuildPageable.buildPageable(pageNo, pageSize, sortBy, sortDir);
-        Page<User> users = userRepository.findUserByEmail(pageable, email);
+        Page<User> users = userRepository.findUserByEmail(email, pageable);
         List<UserInfo> userInfo = getUserInfoList(users);
         UserListResponse response = buildUserListResponse(users, userInfo);
         return ApiResponse.success(

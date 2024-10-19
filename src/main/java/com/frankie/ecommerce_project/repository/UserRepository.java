@@ -13,5 +13,5 @@ public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findByEmail(String email);
 
     @Query("SELECT u FROM User  u WHERE :email IS NULL OR u.email LIKE CONCAT('%', :email, '%')")
-    Page<User> findUserByEmail(Pageable pageable, String email);
+    Page<User> findUserByEmail(String email, Pageable pageable);
 }
