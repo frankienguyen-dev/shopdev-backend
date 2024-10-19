@@ -32,7 +32,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
            String accessToken = securityUtils.createToken(authentication);
            LoginResponse loginResponse = new LoginResponse(accessToken);
            return ApiResponse.success(
-                   "Login successful",
+                   "Login successfully",
                    HttpStatus.OK,
                    loginResponse
            );
