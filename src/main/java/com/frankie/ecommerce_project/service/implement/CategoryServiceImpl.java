@@ -4,6 +4,7 @@ import com.frankie.ecommerce_project.dto.category.common.CategoryInfo;
 import com.frankie.ecommerce_project.dto.category.request.CreateCategoryDto;
 import com.frankie.ecommerce_project.dto.category.request.UpdateCategoryDto;
 import com.frankie.ecommerce_project.dto.category.response.*;
+import com.frankie.ecommerce_project.exception.ResourceExistingException;
 import com.frankie.ecommerce_project.exception.ResourceNotFoundException;
 import com.frankie.ecommerce_project.mapper.CategoryMapper;
 import com.frankie.ecommerce_project.model.Category;
@@ -69,7 +70,7 @@ public class CategoryServiceImpl implements CategoryService {
     public ApiResponse<UpdateCategoryResponse> updateCategory(String id, UpdateCategoryDto updateCategoryDto) {
         Optional<Category> existingCategory = categoryRepository.findByName(updateCategoryDto.getName());
         if (existingCategory.isPresent() && !existingCategory.get().getId().equals(id)) {
-            return ApiResponse.error("Category already exists", HttpStatus.BAD_REQUEST, null);
+            throw new ResourceExistingException("Name", "name", updateCategoryDto.getName());
         }
         Category findCategory = categoryRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Id", "id", id));
