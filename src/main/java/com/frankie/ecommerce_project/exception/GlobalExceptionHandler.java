@@ -45,4 +45,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
     }
+
+    @ExceptionHandler(ResourceExistingException.class)
+    public ResponseEntity<ApiResponse<ErrorDetails>> handleResourceExistingException(
+            ResourceExistingException exception, WebRequest request) {
+        ErrorDetails errorDetails = ErrorDetails.builder()
+                .message(exception.getMessage())
+                .timestamp(Instant.now())
+                .details(request.getDescription(false))
+                .build();
+        ApiResponse<ErrorDetails> apiResponse = ApiResponse.error(
+                "Resource already exists",
+                HttpStatus.BAD_REQUEST,
+                errorDetails
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiResponse);
+    }
+
 }
