@@ -62,8 +62,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public ApiResponse<RoleInfo> getRoleById(String id) {
-        Role findRole = roleRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Id", "id", id));
+        Role findRole = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Role", "id", id));
         RoleInfo roleInfo = RoleMapper.INSTANCE.toRoleInfo(findRole);
         return ApiResponse.success(
                 "Get role by id successfully",
@@ -78,8 +77,7 @@ public class RoleServiceImpl implements RoleService {
         if (existingRole.isPresent() && !existingRole.get().getName().equalsIgnoreCase(updateRoleDto.getName())) {
             return ApiResponse.error("Role already exists", HttpStatus.BAD_REQUEST, null);
         }
-        Role findRole = roleRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Role", "id", id));
+        Role findRole = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Role", "id", id));
         findRole.setName(updateRoleDto.getName());
         roleRepository.save(findRole);
         UpdateRoleResponse roleResponse = RoleMapper.INSTANCE.toUpdateRoleResponse(findRole);
@@ -92,8 +90,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public ApiResponse<DeleteRoleResponse> softDeleteRoleById(String id) {
-        Role findRole = roleRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Role", "id", id));
+        Role findRole = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Role", "id", id));
         findRole.setIsDeleted(true);
         roleRepository.save(findRole);
         DeleteRoleResponse deleteRoleResponse = DeleteRoleResponse.builder()
@@ -111,8 +108,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public ApiResponse<ReactivateRoleResponse> reactivateRoleById(String id) {
-        Role findRole = roleRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Role", "id", id));
+        Role findRole = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Role", "id", id));
         if (!findRole.getIsDeleted()) {
             return ApiResponse.error("Role is not deleted", HttpStatus.BAD_REQUEST, null);
         }

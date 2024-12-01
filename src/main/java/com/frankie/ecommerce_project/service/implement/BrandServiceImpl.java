@@ -69,7 +69,7 @@ public class BrandServiceImpl implements BrandService {
     public ApiResponse<UpdateBrandResponse> updateBrandById(String id, UpdateBrandDto updateBrandDto) {
         Optional<Brand> existingBrand = brandRepository.findByName(updateBrandDto.getName());
         if (existingBrand.isPresent() && !existingBrand.get().getId().endsWith(id)) {
-            throw new ResourceExistingException("Name", "name", updateBrandDto.getName());
+            throw new ResourceExistingException("Brand name", "name", updateBrandDto.getName());
         }
         Brand findBrand = brandRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Id", "id", id));
         findBrand.setName(updateBrandDto.getName());
@@ -80,7 +80,7 @@ public class BrandServiceImpl implements BrandService {
 
     @Override
     public ApiResponse<DeleteBrandResponse> softDeleteBrandById(String id) {
-        Brand findBrand = brandRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Id", "id", id));
+        Brand findBrand = brandRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Brand", "id", id));
         findBrand.setIsDeleted(true);
         brandRepository.save(findBrand);
         DeleteBrandResponse deleteBrandResponse = DeleteBrandResponse.builder()
@@ -94,7 +94,7 @@ public class BrandServiceImpl implements BrandService {
 
     @Override
     public ApiResponse<ReactiveBrandResponse> reactiveBrandById(String id) {
-        Brand findBrand = brandRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Id", "id", id));
+        Brand findBrand = brandRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Brand", "id", id));
         if (!findBrand.getIsDeleted()) {
             return ApiResponse.error("Brand is not deleted", HttpStatus.BAD_REQUEST, null);
         }
