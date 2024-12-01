@@ -70,10 +70,10 @@ public class CategoryServiceImpl implements CategoryService {
     public ApiResponse<UpdateCategoryResponse> updateCategory(String id, UpdateCategoryDto updateCategoryDto) {
         Optional<Category> existingCategory = categoryRepository.findByName(updateCategoryDto.getName());
         if (existingCategory.isPresent() && !existingCategory.get().getId().equals(id)) {
-            throw new ResourceExistingException("Name", "name", updateCategoryDto.getName());
+            throw new ResourceExistingException("Category name", "name", updateCategoryDto.getName());
         }
         Category findCategory = categoryRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Id", "id", id));
+                () -> new ResourceNotFoundException("Category", "id", id));
         findCategory.setName(updateCategoryDto.getName());
         findCategory.setDescription(updateCategoryDto.getDescription());
         categoryRepository.save(findCategory);
@@ -84,7 +84,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public ApiResponse<DeleteCategoryResponse> softDeleteCategoryById(String id) {
         Category findCategory = categoryRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Id", "id", id));
+                () -> new ResourceNotFoundException("Category", "id", id));
         findCategory.setIsDeleted(true);
         categoryRepository.save(findCategory);
         DeleteCategoryResponse deleteCategoryResponse = DeleteCategoryResponse.builder()
@@ -99,7 +99,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public ApiResponse<ReactivateCategoryResponse> reactivateCategoryById(String id) {
         Category findCategory = categoryRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Id", "id", id));
+                () -> new ResourceNotFoundException("Category", "id", id));
         if (!findCategory.getIsDeleted()) {
             return ApiResponse.error("Category is already active", HttpStatus.BAD_REQUEST, null);
         }
