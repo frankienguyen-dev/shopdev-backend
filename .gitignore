@@ -35,6 +35,8 @@ build/
 # Application properties or YAML (bỏ qua nếu chứa thông tin nhạy cảm)
 **/application.yml
 **/application-*.yml
+**/application.yaml
+**/application-*.yaml
 **/application.properties
 **/application-*.properties
 
