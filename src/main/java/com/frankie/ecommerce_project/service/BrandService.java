@@ -11,14 +11,14 @@ public interface BrandService {
 
     ApiResponse<BrandListResponse> getAllBrand(int pageNo, int pageSize, String sortBy, String sortDir);
 
-    ApiResponse<BrandInfo> getBrandById(String id);
+    ApiResponse<BrandInfo> getBrandById(String brandId);
 
-    ApiResponse<UpdateBrandResponse> updateBrandById(String id, UpdateBrandDto updateBrandDto);
+    ApiResponse<UpdateBrandResponse> updateBrandById(String brandId, UpdateBrandDto updateBrandDto);
 
-    ApiResponse<DeleteBrandResponse> softDeleteBrandById(String id);
+    ApiResponse<DeleteBrandResponse> softDeleteBrandById(String brandId);
 
-    ApiResponse<ReactiveBrandResponse> reactiveBrandById(String id);
+    ApiResponse<ReactiveBrandResponse> reactiveBrandById(String brandId);
 
-    ApiResponse<BrandListResponse> searchBrandByName(String name, int pageNo, int pageSize,
+    ApiResponse<BrandListResponse> searchBrandByName(String brandName, int pageNo, int pageSize,
                                                      String sortBy, String sortDir);
 }

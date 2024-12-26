@@ -22,9 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,7 +46,7 @@ public class UserServiceImpl implements UserService {
             if (findUserByEmail.isPresent()) {
                 return ApiResponse.error("Email already exists", HttpStatus.BAD_REQUEST, null);
             }
-            List<Role> roles = buildRoleList(createUserDto.getRoles());
+            Set<Role> roles = buildRoleList(createUserDto.getRoles());
             User newUser = User.builder()
                     .id(createUserDto.getId())
                     .fullName(createUserDto.getFullName())
@@ -71,13 +69,19 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private List<Role> buildRoleList(List<RoleName> roles) {
-        List<Role> roleList = new ArrayList<>();
+    private Set<Role> buildRoleList(Set<RoleName> roles) {
+
+        Set<Role> roleList = new HashSet<>();
+
         for (RoleName roleName : roles) {
+
             Optional<Role> findRole = roleRepository.findByName(roleName.getName());
+
             if (findRole.isPresent()) roleList.add(findRole.get());
+
             else throw new ResourceNotFoundException("Role", "name", roleName.getName());
         }
+
         return roleList;
     }
 
@@ -96,8 +100,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ApiResponse<UserInfo> getUserById(String id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+    public ApiResponse<UserInfo> getUserById(String userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User id", "id", userId));
         UserInfo userInformation = UserMapper.INSTANCE.toUserInfo(user);
         return ApiResponse.success(
                 "Get user by id successfully",
@@ -107,9 +111,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ApiResponse<UpdateUserResponse> updateUserById(String id, UpdateUserDto updateUserDto) {
-        User findUser = userRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("User", "id", id));
+    public ApiResponse<UpdateUserResponse> updateUserById(String userId, UpdateUserDto updateUserDto) {
+        User findUser = userRepository.findById(userId).orElseThrow(
+                () -> new ResourceNotFoundException("User id", "id", userId));
         String newEmail = updateUserDto.getEmail();
         if (newEmail != null && !newEmail.equals(findUser.getEmail())) {
             Optional<User> existingUser = userRepository.findByEmail(newEmail);
@@ -117,7 +121,7 @@ public class UserServiceImpl implements UserService {
                 return ApiResponse.error("Email already exists", HttpStatus.BAD_REQUEST, null);
             }
         }
-        List<Role> roles = buildRoleList(updateUserDto.getRoles());
+        Set<Role> roles = buildRoleList(updateUserDto.getRoles());
         findUser.setFullName(updateUserDto.getFullName());
         findUser.setEmail(updateUserDto.getEmail());
         findUser.setPhoneNumber(updateUserDto.getPhoneNumber());
@@ -135,9 +139,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ApiResponse<DeleteUserResponse> softDeleteUserById(String id) {
-        User findUser = userRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("User", "id", id));
+    public ApiResponse<DeleteUserResponse> softDeleteUserById(String userId) {
+        User findUser = userRepository.findById(userId).orElseThrow(
+                () -> new ResourceNotFoundException("User id", "id", userId));
         findUser.setIsDeleted(true);
         findUser.setIsActive(false);
         userRepository.save(findUser);
@@ -157,9 +161,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ApiResponse<UserListResponse> searchUserByEmail(int pageNo, int pageSize,
-                                                           String sortBy, String sortDir, String email) {
+                                                           String sortBy, String sortDir, String userEmail) {
         Pageable pageable = BuildPageable.buildPageable(pageNo, pageSize, sortBy, sortDir);
-        Page<User> users = userRepository.findUserByEmail(email, pageable);
+        Page<User> users = userRepository.findUserByEmail(userEmail, pageable);
         List<UserInfo> userInfo = getUserInfoList(users);
         UserListResponse response = buildUserListResponse(users, userInfo);
         return ApiResponse.success(
@@ -170,9 +174,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ApiResponse<ReactivateUserAccount> reactivateUserAccount(String id) {
-        User findUser = userRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("User", "id", id));
+    public ApiResponse<ReactivateUserAccount> reactivateUserAccount(String userId) {
+        User findUser = userRepository.findById(userId).orElseThrow(
+                () -> new ResourceNotFoundException("User id", "id", userId));
         if (findUser.getIsActive() && !findUser.getIsDeleted()) {
             return ApiResponse.error("User is already active", HttpStatus.BAD_REQUEST, null);
         }

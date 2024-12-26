@@ -3,6 +3,7 @@ package com.frankie.ecommerce_project.dto.role.response;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 @Getter
@@ -10,10 +11,6 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class DeleteRoleResponse {
+public class DeleteRoleResponse implements Serializable {
     private String id;
-    private Boolean isDeleted;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
-    private Instant updatedAt;
-    private String updatedBy;
 }

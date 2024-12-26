@@ -12,6 +12,4 @@ public interface RoleRepository extends JpaRepository<Role, String> {
 
     Optional<Role> findByName(String name);
 
-    @Query("SELECT r FROM Role  r WHERE :name IS NULL OR r.name LIKE CONCAT('%', :name, '%')")
-    Page<Role> searchRoleByName(String name, Pageable pageable);
 }

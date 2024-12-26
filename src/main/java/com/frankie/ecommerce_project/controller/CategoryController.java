@@ -42,33 +42,33 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<CategoryInfo>> getCategoryById(@PathVariable String id) {
-        ApiResponse<CategoryInfo> getCategoryById = categoryService.getCategoryById(id);
+    public ResponseEntity<ApiResponse<CategoryInfo>> getCategoryById(@PathVariable("id") String categoryId) {
+        ApiResponse<CategoryInfo> getCategoryById = categoryService.getCategoryById(categoryId);
         return ResponseEntity.status(HttpStatus.OK).body(getCategoryById);
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<UpdateCategoryResponse>> updateCategoryById(
-            @PathVariable String id, @RequestBody UpdateCategoryDto updateCategoryDto) {
-        ApiResponse<UpdateCategoryResponse> updateCategory = categoryService.updateCategory(id, updateCategoryDto);
+            @PathVariable("id") String categoryId, @RequestBody UpdateCategoryDto updateCategoryDto) {
+        ApiResponse<UpdateCategoryResponse> updateCategory = categoryService.updateCategory(categoryId, updateCategoryDto);
         return ResponseEntity.status(HttpStatus.OK).body(updateCategory);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<DeleteCategoryResponse>> softDeleteCategoryById(@PathVariable String id) {
-        ApiResponse<DeleteCategoryResponse> deleteCategory = categoryService.softDeleteCategoryById(id);
+    public ResponseEntity<ApiResponse<DeleteCategoryResponse>> softDeleteCategoryById(@PathVariable("id") String categoryId) {
+        ApiResponse<DeleteCategoryResponse> deleteCategory = categoryService.softDeleteCategoryById(categoryId);
         return ResponseEntity.status(HttpStatus.OK).body(deleteCategory);
     }
 
     @PatchMapping("reactivate/{id}")
-    public ResponseEntity<ApiResponse<ReactivateCategoryResponse>> reactivateCategoryById(@PathVariable String id) {
-        ApiResponse<ReactivateCategoryResponse> reactivateCategory = categoryService.reactivateCategoryById(id);
+    public ResponseEntity<ApiResponse<ReactivateCategoryResponse>> reactivateCategoryById(@PathVariable("id") String categoryId) {
+        ApiResponse<ReactivateCategoryResponse> reactivateCategory = categoryService.reactivateCategoryById(categoryId);
         return ResponseEntity.status(HttpStatus.OK).body(reactivateCategory);
     }
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<CategoryListResponse>> searchCategoryByName(
-            @RequestParam(value = "name", required = false) String email,
+            @RequestParam(value = "name", required = false) String categoryName,
             @RequestParam(value = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER,
                     required = false) int pageNo,
             @RequestParam(value = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE,
@@ -78,7 +78,7 @@ public class CategoryController {
             @RequestParam(value = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION,
                     required = false) String sortDir) {
         ApiResponse<CategoryListResponse> searchByName = categoryService.searchCategoryByName(
-                email, pageNo, pageSize, sortBy, sortDir);
+                categoryName, pageNo, pageSize, sortBy, sortDir);
         return ResponseEntity.status(HttpStatus.OK).body(searchByName);
     }
 }

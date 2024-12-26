@@ -48,8 +48,7 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public ApiResponse<BrandListResponse> getAllBrand(int pageNo, int pageSize, String sortBy,
-                                                      String sortDir) {
+    public ApiResponse<BrandListResponse> getAllBrand(int pageNo, int pageSize, String sortBy, String sortDir) {
         Pageable pageable = BuildPageable.buildPageable(pageNo, pageSize, sortBy, sortDir);
         Page<Brand> brands = brandRepository.findAll(pageable);
         List<BrandInfo> brandInfoList = buildBrandInfoList(brands);
@@ -58,20 +57,20 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public ApiResponse<BrandInfo> getBrandById(String id) {
-        Brand findBrand = brandRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Id", "id", id));
+    public ApiResponse<BrandInfo> getBrandById(String brandId) {
+        Brand findBrand = brandRepository.findById(brandId).orElseThrow(
+                () -> new ResourceNotFoundException("Brand id", "id", brandId));
         BrandInfo brandInfo = BrandMapper.INSTANCE.toBrandInfo(findBrand);
         return ApiResponse.success("Get brand by id successfully", HttpStatus.OK, brandInfo);
     }
 
     @Override
-    public ApiResponse<UpdateBrandResponse> updateBrandById(String id, UpdateBrandDto updateBrandDto) {
+    public ApiResponse<UpdateBrandResponse> updateBrandById(String brandId, UpdateBrandDto updateBrandDto) {
         Optional<Brand> existingBrand = brandRepository.findByName(updateBrandDto.getName());
-        if (existingBrand.isPresent() && !existingBrand.get().getId().endsWith(id)) {
-            throw new ResourceExistingException("Name", "name", updateBrandDto.getName());
+        if (existingBrand.isPresent() && !existingBrand.get().getId().endsWith(brandId)) {
+            throw new ResourceExistingException("Brand name", "name", updateBrandDto.getName());
         }
-        Brand findBrand = brandRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Id", "id", id));
+        Brand findBrand = brandRepository.findById(brandId).orElseThrow(() -> new ResourceNotFoundException("Brand id", "id", brandId));
         findBrand.setName(updateBrandDto.getName());
         brandRepository.save(findBrand);
         UpdateBrandResponse updateBrandResponse = BrandMapper.INSTANCE.toUpdateBrandResponse(findBrand);
@@ -79,8 +78,8 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public ApiResponse<DeleteBrandResponse> softDeleteBrandById(String id) {
-        Brand findBrand = brandRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Id", "id", id));
+    public ApiResponse<DeleteBrandResponse> softDeleteBrandById(String brandId) {
+        Brand findBrand = brandRepository.findById(brandId).orElseThrow(() -> new ResourceNotFoundException("Brand id", "id", brandId));
         findBrand.setIsDeleted(true);
         brandRepository.save(findBrand);
         DeleteBrandResponse deleteBrandResponse = DeleteBrandResponse.builder()
@@ -93,8 +92,8 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public ApiResponse<ReactiveBrandResponse> reactiveBrandById(String id) {
-        Brand findBrand = brandRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Id", "id", id));
+    public ApiResponse<ReactiveBrandResponse> reactiveBrandById(String brandId) {
+        Brand findBrand = brandRepository.findById(brandId).orElseThrow(() -> new ResourceNotFoundException("Brand id", "id", brandId));
         if (!findBrand.getIsDeleted()) {
             return ApiResponse.error("Brand is not deleted", HttpStatus.BAD_REQUEST, null);
         }
@@ -110,10 +109,10 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public ApiResponse<BrandListResponse> searchBrandByName(String name, int pageNo, int pageSize,
+    public ApiResponse<BrandListResponse> searchBrandByName(String brandName, int pageNo, int pageSize,
                                                             String sortBy, String sortDir) {
         Pageable pageable = BuildPageable.buildPageable(pageNo, pageSize, sortBy, sortDir);
-        Page<Brand> brands = brandRepository.searchBrandByName(name, pageable);
+        Page<Brand> brands = brandRepository.searchBrandByName(brandName, pageable);
         List<BrandInfo> buildBrandInfoList = buildBrandInfoList(brands);
         BrandListResponse buildBrandSearchListResponse = buildBrandListResponse(brands, buildBrandInfoList);
         return ApiResponse.success("Search brand by name successfully", HttpStatus.OK, buildBrandSearchListResponse);

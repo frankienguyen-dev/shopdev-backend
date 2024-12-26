@@ -1,7 +1,10 @@
 package com.frankie.ecommerce_project.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 
@@ -9,20 +12,23 @@ import java.time.Instant;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class Product {
-    private String id;
+@SuperBuilder
+@Entity
+@Table(name = "products")
+public class Product extends BaseEntity{
+
     private String name;
+
     private Long originalPrice;
+
     private Long discountPrice;
+
     private int rating;
+
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
+
     private int quantity;
-    private Instant createdAt;
-    private String createdBy;
-    private Instant updatedAt;
-    private String updatedBy;
+
     private Boolean isActive = true;
-    private Boolean isDeleted = false;
 }

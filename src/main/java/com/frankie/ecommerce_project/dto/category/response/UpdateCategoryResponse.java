@@ -3,6 +3,7 @@ package com.frankie.ecommerce_project.dto.category.response;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 @Getter
@@ -10,7 +11,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UpdateCategoryResponse {
+public class UpdateCategoryResponse implements Serializable {
     private String id;
     private String name;
     private String description;

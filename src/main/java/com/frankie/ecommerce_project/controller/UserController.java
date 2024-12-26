@@ -42,21 +42,21 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserInfo>> getUserInfoById(@PathVariable String id) {
-        ApiResponse<UserInfo> getUser = userService.getUserById(id);
+    public ResponseEntity<ApiResponse<UserInfo>> getUserInfoById(@PathVariable("id") String userId) {
+        ApiResponse<UserInfo> getUser = userService.getUserById(userId);
         return ResponseEntity.status(HttpStatus.OK).body(getUser);
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<UpdateUserResponse>> updateUserById(
-            @PathVariable String id, @RequestBody UpdateUserDto updateUserDto) {
-        ApiResponse<UpdateUserResponse> updateUser = userService.updateUserById(id, updateUserDto);
+            @PathVariable("id") String userId, @RequestBody UpdateUserDto updateUserDto) {
+        ApiResponse<UpdateUserResponse> updateUser = userService.updateUserById(userId, updateUserDto);
         return ResponseEntity.status(HttpStatus.OK).body(updateUser);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<DeleteUserResponse>> softDeleteUserById(@PathVariable String id) {
-        ApiResponse<DeleteUserResponse> deleteUser = userService.softDeleteUserById(id);
+    public ResponseEntity<ApiResponse<DeleteUserResponse>> softDeleteUserById(@PathVariable("id") String userId) {
+        ApiResponse<DeleteUserResponse> deleteUser = userService.softDeleteUserById(userId);
         return ResponseEntity.status(HttpStatus.OK).body(deleteUser);
     }
 
@@ -70,15 +70,15 @@ public class UserController {
                     required = false) String sortBy,
             @RequestParam(value = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION,
                     required = false) String sortDir,
-            @RequestParam(value = "email", required = false) String email) {
+            @RequestParam(value = "email", required = false) String userEmail) {
         ApiResponse<UserListResponse> searchListUser = userService
-                .searchUserByEmail(pageNo, pageSize, sortBy, sortDir, email);
+                .searchUserByEmail(pageNo, pageSize, sortBy, sortDir, userEmail);
         return ResponseEntity.status(HttpStatus.OK).body(searchListUser);
     }
 
     @PatchMapping("/deactivate/{id}")
-    public ResponseEntity<ApiResponse<ReactivateUserAccount>> reactivateUserAccount(@PathVariable String id) {
-        ApiResponse<ReactivateUserAccount> reactivateUser = userService.reactivateUserAccount(id);
+    public ResponseEntity<ApiResponse<ReactivateUserAccount>> reactivateUserAccount(@PathVariable("id") String userId) {
+        ApiResponse<ReactivateUserAccount> reactivateUser = userService.reactivateUserAccount(userId);
         return ResponseEntity.status(HttpStatus.OK).body(reactivateUser);
     }
 }

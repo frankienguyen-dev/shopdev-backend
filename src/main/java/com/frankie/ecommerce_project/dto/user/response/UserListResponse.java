@@ -4,6 +4,7 @@ import com.frankie.ecommerce_project.dto.user.common.UserInfo;
 import com.frankie.ecommerce_project.utils.apiResponse.MetaData;
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Getter
@@ -11,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserListResponse {
+public class UserListResponse implements Serializable {
     private MetaData meta;
     private List<UserInfo> data;
 }

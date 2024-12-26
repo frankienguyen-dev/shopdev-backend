@@ -11,14 +11,13 @@ public interface UserService {
 
     ApiResponse<UserListResponse> getAllUsers(int pageNo, int pageSize, String sortBy, String sortDir);
 
-    ApiResponse<UserInfo> getUserById(String id);
+    ApiResponse<UserInfo> getUserById(String userId);
 
-    ApiResponse<UpdateUserResponse> updateUserById(String id, UpdateUserDto updateUserDto);
+    ApiResponse<UpdateUserResponse> updateUserById(String userId, UpdateUserDto updateUserDto);
 
-    ApiResponse<DeleteUserResponse> softDeleteUserById(String id);
+    ApiResponse<DeleteUserResponse> softDeleteUserById(String userId);
 
-    ApiResponse<UserListResponse> searchUserByEmail(
-            int pageNo, int pageSize, String sortBy, String sortDir, String email);
+    ApiResponse<UserListResponse> searchUserByEmail(int pageNo, int pageSize, String sortBy, String sortDir, String userEmail);
 
-    ApiResponse<ReactivateUserAccount> reactivateUserAccount(String id);
+    ApiResponse<ReactivateUserAccount> reactivateUserAccount(String userId);
 }

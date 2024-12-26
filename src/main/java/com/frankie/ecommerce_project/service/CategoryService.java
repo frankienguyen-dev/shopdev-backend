@@ -11,14 +11,14 @@ public interface CategoryService {
 
     ApiResponse<CategoryListResponse> getALlCategories(int pageNo, int pageSize, String sortBy, String sortDir);
 
-    ApiResponse<CategoryInfo> getCategoryById(String id);
+    ApiResponse<CategoryInfo> getCategoryById(String categoryId);
 
-    ApiResponse<UpdateCategoryResponse> updateCategory(String id, UpdateCategoryDto updateCategoryDto);
+    ApiResponse<UpdateCategoryResponse> updateCategory(String categoryId, UpdateCategoryDto updateCategoryDto);
 
-    ApiResponse<DeleteCategoryResponse> softDeleteCategoryById(String id);
+    ApiResponse<DeleteCategoryResponse> softDeleteCategoryById(String categoryId);
 
-    ApiResponse<ReactivateCategoryResponse> reactivateCategoryById(String id);
+    ApiResponse<ReactivateCategoryResponse> reactivateCategoryById(String categoryId);
 
-    ApiResponse<CategoryListResponse> searchCategoryByName(String name, int pageNo, int pageSize,
+    ApiResponse<CategoryListResponse> searchCategoryByName(String categoryName, int pageNo, int pageSize,
                                                            String sortBy, String sortDir);
 }

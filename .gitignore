@@ -32,7 +32,7 @@ build/
 ### VS Code ###
 .vscode/
 
-# Application properties or YAML (bỏ qua nếu chứa thông tin nhạy cảm)
+# Application properties or YAML or YML (bỏ qua nếu chứa thông tin nhạy cảm)
 **/application.yml
 **/application-*.yml
 **/application.yaml

@@ -59,21 +59,21 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public ApiResponse<CategoryInfo> getCategoryById(String id) {
-        Category findCategory = categoryRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Id", "id", id));
+    public ApiResponse<CategoryInfo> getCategoryById(String categoryId) {
+        Category findCategory = categoryRepository.findById(categoryId).orElseThrow(
+                () -> new ResourceNotFoundException("Category id", "id", categoryId));
         CategoryInfo categoryInfo = CategoryMapper.INSTANCE.toCategoryInfo(findCategory);
         return ApiResponse.success("Get category by id successfully", HttpStatus.OK, categoryInfo);
     }
 
     @Override
-    public ApiResponse<UpdateCategoryResponse> updateCategory(String id, UpdateCategoryDto updateCategoryDto) {
+    public ApiResponse<UpdateCategoryResponse> updateCategory(String categoryId, UpdateCategoryDto updateCategoryDto) {
         Optional<Category> existingCategory = categoryRepository.findByName(updateCategoryDto.getName());
-        if (existingCategory.isPresent() && !existingCategory.get().getId().equals(id)) {
-            throw new ResourceExistingException("Name", "name", updateCategoryDto.getName());
+        if (existingCategory.isPresent() && !existingCategory.get().getId().equals(categoryId)) {
+            throw new ResourceExistingException("Category name", "name", updateCategoryDto.getName());
         }
-        Category findCategory = categoryRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Id", "id", id));
+        Category findCategory = categoryRepository.findById(categoryId).orElseThrow(
+                () -> new ResourceNotFoundException("Category id", "id", categoryId));
         findCategory.setName(updateCategoryDto.getName());
         findCategory.setDescription(updateCategoryDto.getDescription());
         categoryRepository.save(findCategory);
@@ -82,9 +82,9 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public ApiResponse<DeleteCategoryResponse> softDeleteCategoryById(String id) {
-        Category findCategory = categoryRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Id", "id", id));
+    public ApiResponse<DeleteCategoryResponse> softDeleteCategoryById(String categoryId) {
+        Category findCategory = categoryRepository.findById(categoryId).orElseThrow(
+                () -> new ResourceNotFoundException("Category id", "id", categoryId));
         findCategory.setIsDeleted(true);
         categoryRepository.save(findCategory);
         DeleteCategoryResponse deleteCategoryResponse = DeleteCategoryResponse.builder()
@@ -97,9 +97,9 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public ApiResponse<ReactivateCategoryResponse> reactivateCategoryById(String id) {
-        Category findCategory = categoryRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Id", "id", id));
+    public ApiResponse<ReactivateCategoryResponse> reactivateCategoryById(String categoryId) {
+        Category findCategory = categoryRepository.findById(categoryId).orElseThrow(
+                () -> new ResourceNotFoundException("Category id", "id", categoryId));
         if (!findCategory.getIsDeleted()) {
             return ApiResponse.error("Category is already active", HttpStatus.BAD_REQUEST, null);
         }
@@ -115,10 +115,10 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public ApiResponse<CategoryListResponse> searchCategoryByName(String name, int pageNo, int pageSize,
+    public ApiResponse<CategoryListResponse> searchCategoryByName(String categoryName, int pageNo, int pageSize,
                                                                   String sortBy, String sortDir) {
         Pageable pageable = BuildPageable.buildPageable(pageNo, pageSize, sortBy, sortDir);
-        Page<Category> categories = categoryRepository.searchByName(name, pageable);
+        Page<Category> categories = categoryRepository.searchByName(categoryName, pageable);
         List<CategoryInfo> categoryInfoList = buildCategoryList(categories);
         CategoryListResponse categoryListResponse = buildCategoryListResponse(categories, categoryInfoList);
         return ApiResponse.success("Search category by name successfully", HttpStatus.OK, categoryListResponse);

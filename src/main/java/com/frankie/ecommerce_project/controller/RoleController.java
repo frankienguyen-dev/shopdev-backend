@@ -1,6 +1,7 @@
 package com.frankie.ecommerce_project.controller;
 
 import com.frankie.ecommerce_project.dto.role.common.RoleInfo;
+import com.frankie.ecommerce_project.dto.role.request.CreateRoleDto;
 import com.frankie.ecommerce_project.dto.role.request.UpdateRoleDto;
 import com.frankie.ecommerce_project.dto.role.response.*;
 import com.frankie.ecommerce_project.service.RoleService;
@@ -21,9 +22,8 @@ public class RoleController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CreateRoleResponse>> createRole(
-            @RequestBody CreateRoleResponse createRoleResponse) {
-        ApiResponse<CreateRoleResponse> createRole = roleService.createNewRole(createRoleResponse);
+    public ResponseEntity<ApiResponse<CreateRoleResponse>> createRole(@RequestBody CreateRoleDto role) {
+        ApiResponse<CreateRoleResponse> createRole = roleService.createNewRole(role);
         return ResponseEntity.status(HttpStatus.CREATED).body(createRole);
     }
 
@@ -42,43 +42,21 @@ public class RoleController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<RoleInfo>> getRoleById(@PathVariable String id) {
-        ApiResponse<RoleInfo> getRoleById = roleService.getRoleById(id);
+    public ResponseEntity<ApiResponse<RoleInfo>> getRoleById(@PathVariable("id") String roleId) {
+        ApiResponse<RoleInfo> getRoleById = roleService.getRoleById(roleId);
         return ResponseEntity.status(HttpStatus.OK).body(getRoleById);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<UpdateRoleResponse>> updateRoleById(
-            @PathVariable String id, @RequestBody UpdateRoleDto updateRoleDto) {
-        ApiResponse<UpdateRoleResponse> updateRole = roleService.updateRoleById(id, updateRoleDto);
+    public ResponseEntity<ApiResponse<UpdateRoleResponse>> updateRoleById(@PathVariable("id") String roleId,
+                                                                          @RequestBody UpdateRoleDto role) {
+        ApiResponse<UpdateRoleResponse> updateRole = roleService.updateRoleById(roleId, role);
         return ResponseEntity.status(HttpStatus.OK).body(updateRole);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<DeleteRoleResponse>> softDeleteRoleById(@PathVariable String id) {
-        ApiResponse<DeleteRoleResponse> deleteRole = roleService.softDeleteRoleById(id);
+    public ResponseEntity<ApiResponse<DeleteRoleResponse>> deleteRoleById(@PathVariable("id") String roleId) {
+        ApiResponse<DeleteRoleResponse> deleteRole = roleService.deleteRoleById(roleId);
         return ResponseEntity.status(HttpStatus.OK).body(deleteRole);
-    }
-
-    @PatchMapping("/reactivate/{id}")
-    public ResponseEntity<ApiResponse<ReactivateRoleResponse>> reactivateRoleById(@PathVariable String id) {
-        ApiResponse<ReactivateRoleResponse> reactivateRole = roleService.reactivateRoleById(id);
-        return ResponseEntity.status(HttpStatus.OK).body(reactivateRole);
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<RoleListResponse>> searchRoleByName(
-            @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER,
-                    required = false) int pageNo,
-            @RequestParam(value = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE,
-                    required = false) int pageSize,
-            @RequestParam(value = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY,
-                    required = false) String sortBy,
-            @RequestParam(value = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION
-                    , required = false) String sortDir) {
-        ApiResponse<RoleListResponse> searchRoleList = roleService.searchRoleByName(name, pageNo,
-                pageSize, sortBy, sortDir);
-        return ResponseEntity.status(HttpStatus.OK).body(searchRoleList);
     }
 }

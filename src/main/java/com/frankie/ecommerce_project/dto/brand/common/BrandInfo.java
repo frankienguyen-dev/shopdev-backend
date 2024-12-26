@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 @Getter
@@ -14,7 +15,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class BrandInfo {
+public class BrandInfo implements Serializable {
     private String id;
     private String name;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")

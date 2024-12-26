@@ -4,9 +4,12 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.frankie.ecommerce_project.security.SecurityUtil;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -15,39 +18,20 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "roles")
-@Builder
-public class Role {
-    @Id
-    private String id;
+@SuperBuilder
+public class Role extends BaseEntity{
+
     private String name;
+
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "roles")
-    private List<User> user;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
-    private Instant createdAt;
-    private String createdBy;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
-    private Instant updatedAt;
-    private String updatedBy;
-    private Boolean isDeleted = false;
+    private Set<User> user = new HashSet<>();
 
-    @PrePersist
-    private void handleCreateRole() {
-        this.id = generateId();
-        this.createdAt = Instant.now();
-        this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent()
-                ? SecurityUtil.getCurrentUserLogin().get()
-                : "";
-    }
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "role_permissions",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id")
+    )
+    private Set<Permission> permissions = new HashSet<>();
 
-    @PreUpdate
-    private void handleUpdateRole() {
-        this.updatedAt = Instant.now();
-        this.updatedBy = SecurityUtil.getCurrentUserLogin().isPresent()
-                ? SecurityUtil.getCurrentUserLogin().get()
-                : "";
-    }
-
-    private String generateId() {
-        return UUID.randomUUID().toString();
-    }
 }

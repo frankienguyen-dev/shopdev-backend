@@ -7,11 +7,13 @@ import com.frankie.ecommerce_project.model.Role;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
+
 @Mapper
 public interface RoleMapper {
     RoleMapper INSTANCE = Mappers.getMapper(RoleMapper.class);
 
     CreateRoleResponse toCreateRoleResponse(Role role);
+
 
     RoleInfo toRoleInfo(Role role);
 

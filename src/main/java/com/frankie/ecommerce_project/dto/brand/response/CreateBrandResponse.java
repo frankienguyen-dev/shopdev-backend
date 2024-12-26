@@ -3,6 +3,7 @@ package com.frankie.ecommerce_project.dto.brand.response;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 @Getter
@@ -10,7 +11,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class CreateBrandResponse {
+public class CreateBrandResponse implements Serializable {
     private String id;
     private String name;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")

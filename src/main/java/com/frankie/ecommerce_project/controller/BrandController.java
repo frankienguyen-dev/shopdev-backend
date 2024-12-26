@@ -42,33 +42,33 @@ public class BrandController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<BrandInfo>> getBrandById(@PathVariable String id) {
-        ApiResponse<BrandInfo> getBrandById = brandService.getBrandById(id);
+    public ResponseEntity<ApiResponse<BrandInfo>> getBrandById(@PathVariable("id") String brandId) {
+        ApiResponse<BrandInfo> getBrandById = brandService.getBrandById(brandId);
         return ResponseEntity.status(HttpStatus.OK).body(getBrandById);
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<UpdateBrandResponse>> updateBrandById(
-            @PathVariable String id, @RequestBody UpdateBrandDto updateBrandDto) {
-        ApiResponse<UpdateBrandResponse> updateBrandById = brandService.updateBrandById(id, updateBrandDto);
+            @PathVariable("id") String brandId, @RequestBody UpdateBrandDto updateBrandDto) {
+        ApiResponse<UpdateBrandResponse> updateBrandById = brandService.updateBrandById(brandId, updateBrandDto);
         return ResponseEntity.status(HttpStatus.OK).body(updateBrandById);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<DeleteBrandResponse>> softDeleteBrandById(@PathVariable String id) {
-        ApiResponse<DeleteBrandResponse> softDeleteBrandById = brandService.softDeleteBrandById(id);
+    public ResponseEntity<ApiResponse<DeleteBrandResponse>> softDeleteBrandById(@PathVariable("id") String brandId) {
+        ApiResponse<DeleteBrandResponse> softDeleteBrandById = brandService.softDeleteBrandById(brandId);
         return ResponseEntity.status(HttpStatus.OK).body(softDeleteBrandById);
     }
 
     @PatchMapping("/reactive/{id}")
-    public ResponseEntity<ApiResponse<ReactiveBrandResponse>> reactiveBrandById(@PathVariable String id) {
-        ApiResponse<ReactiveBrandResponse> reactiveBrandById = brandService.reactiveBrandById(id);
+    public ResponseEntity<ApiResponse<ReactiveBrandResponse>> reactiveBrandById(@PathVariable("id") String brandId) {
+        ApiResponse<ReactiveBrandResponse> reactiveBrandById = brandService.reactiveBrandById(brandId);
         return ResponseEntity.status(HttpStatus.OK).body(reactiveBrandById);
     }
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<BrandListResponse>> searchBrandByName(
-            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "name", required = false) String brandName,
             @RequestParam(value = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER,
                     required = false) Integer pageNo,
             @RequestParam(value = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE,
@@ -78,8 +78,7 @@ public class BrandController {
             @RequestParam(value = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION,
                     required = false) String sortDir
     ) {
-        ApiResponse<BrandListResponse> searchBrandByName = brandService
-                .searchBrandByName(name, pageNo, pageSize, sortBy, sortDir);
+        ApiResponse<BrandListResponse> searchBrandByName = brandService.searchBrandByName(brandName, pageNo, pageSize, sortBy, sortDir);
         return ResponseEntity.status(HttpStatus.OK).body(searchBrandByName);
     }
 }
