@@ -16,7 +16,7 @@ import java.util.UUID;
 @SuperBuilder
 @Table(name = "categories")
 @Entity
-public class Category extends BaseEntity{
+public class Category extends BaseEntity {
 
     private String name;
 

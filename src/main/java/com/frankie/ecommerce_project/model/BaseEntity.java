@@ -42,17 +42,21 @@ public abstract class BaseEntity {
     private void handleCreateBrand() {
         this.id = generateId();
         this.createdAt = Instant.now();
-        this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent()
-                ? SecurityUtil.getCurrentUserLogin().get()
-                : "";
+        if (this.createdBy == null || this.createdBy.isEmpty()) {
+            this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent()
+                    ? SecurityUtil.getCurrentUserLogin().get()
+                    : "system";
+        }
     }
 
     @PreUpdate
     private void handleUpdateBrand() {
         this.updatedAt = Instant.now();
-        this.updatedBy = SecurityUtil.getCurrentUserLogin().isPresent()
-                ? SecurityUtil.getCurrentUserLogin().get()
-                : "";
+        if (this.createdBy == null || this.createdBy.isEmpty()) {
+            this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent()
+                    ? SecurityUtil.getCurrentUserLogin().get()
+                    : "system";
+        }
     }
 
 

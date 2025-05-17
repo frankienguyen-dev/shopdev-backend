@@ -1,34 +1,43 @@
 package com.frankie.ecommerce_project.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@SuperBuilder
 @Entity
 @Table(name = "products")
 public class Product extends BaseEntity{
 
-    private String name;
+    @Column(name = "product_name")
+    private String productName;
 
-    private Long originalPrice;
+    @Column(name = "product_desc")
+    private String productDesc;
 
-    private Long discountPrice;
+    @Column(name = "product_status")
+    private Integer productStatus;
 
-    private int rating;
+    @Column(name = "product_attrs", columnDefinition = "json")
+    private String productAttrs;
 
-    @Column(columnDefinition = "MEDIUMTEXT")
-    private String description;
 
-    private int quantity;
+    // Mối quan hệ nhiều-nhiều với SKU thông qua bảng trung gian `spu_to_sku`
+    @ManyToMany
+    @JoinTable(
+            name = "spu_to_sku",
+            joinColumns = @JoinColumn(name = "product_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "sku_id", referencedColumnName = "id")
+    )
+    private List<SkuProduct> skus = new ArrayList<>();
 
-    private Boolean isActive = true;
 }

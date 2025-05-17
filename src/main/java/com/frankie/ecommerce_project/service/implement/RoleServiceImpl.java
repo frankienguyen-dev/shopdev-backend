@@ -16,6 +16,7 @@ import com.frankie.ecommerce_project.service.RoleService;
 import com.frankie.ecommerce_project.utils.BuildPageable;
 import com.frankie.ecommerce_project.utils.apiResponse.ApiResponse;
 import com.frankie.ecommerce_project.utils.apiResponse.MetaData;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
@@ -38,6 +40,7 @@ public class RoleServiceImpl implements RoleService {
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
     }
+
 
     @Override
     public ApiResponse<CreateRoleResponse> createNewRole(CreateRoleDto role) {
@@ -64,6 +67,8 @@ public class RoleServiceImpl implements RoleService {
         return ApiResponse.success("Role created successfully", HttpStatus.CREATED, roleDtoMapping);
     }
 
+
+
     private Set<Permission> buildPermissionList(Set<PermissionName> permissions) {
 
         Set<Permission> permissionList = new HashSet<>();
@@ -87,11 +92,7 @@ public class RoleServiceImpl implements RoleService {
         Page<Role> roles = roleRepository.findAll(pageable);
         List<RoleInfo> roleInfoList = buildRoleList(roles);
         RoleListResponse roleListResponses = buildRoleListResponse(roles, roleInfoList);
-        return ApiResponse.success(
-                "Get all roles successfully",
-                HttpStatus.OK,
-                roleListResponses
-        );
+        return ApiResponse.success("Get all roles successfully", HttpStatus.OK, roleListResponses);
     }
 
     @Override
@@ -140,11 +141,7 @@ public class RoleServiceImpl implements RoleService {
 
         DeleteRoleResponse deleteRoleResponse = DeleteRoleResponse.builder().id(findRole.getId()).build();
 
-        return ApiResponse.success(
-                "Soft delete role successfully",
-                HttpStatus.OK,
-                deleteRoleResponse
-        );
+        return ApiResponse.success("Role deleted successfully", HttpStatus.OK, deleteRoleResponse);
     }
 
     private List<RoleInfo> buildRoleList(Page<Role> roles) {

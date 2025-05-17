@@ -9,6 +9,7 @@ import com.frankie.ecommerce_project.utils.AppConstants;
 import com.frankie.ecommerce_project.utils.apiResponse.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,6 +28,7 @@ public class RoleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createRole);
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping
     public ResponseEntity<ApiResponse<RoleListResponse>> getAllRoles(
             @RequestParam(value = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER,

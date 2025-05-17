@@ -3,6 +3,7 @@ package com.frankie.ecommerce_project.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.frankie.ecommerce_project.security.SecurityUtil;
 import com.frankie.ecommerce_project.security.token.JwtTokenProvider;
+
 import jakarta.annotation.PreDestroy;
 import jakarta.persistence.*;
 import lombok.*;
@@ -46,5 +47,7 @@ public class User extends BaseEntity {
     private Set<Role> roles = new HashSet<>();
 
     private Boolean isActive = true;
+
+    private Boolean isVerified = false;
 
 }
