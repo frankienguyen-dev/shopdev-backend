@@ -22,42 +22,32 @@ public class BrandController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<CreateBrandResponse>> createBrand(@RequestBody CreateBrandDto createBrandDto) {
-        ApiResponse<CreateBrandResponse> createBrand = brandService.createBrand(createBrandDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createBrand);
+        return ResponseEntity.status(HttpStatus.CREATED).body(brandService.createBrand(createBrandDto));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<BrandListResponse>> getAllBrands(
-            @RequestParam(value = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER,
-                    required = false) Integer pageNo,
-            @RequestParam(value = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE,
-                    required = false) Integer pageSize,
-            @RequestParam(value = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY,
-                    required = false) String sortBy,
-            @RequestParam(value = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION,
-                    required = false) String sortDir
-    ) {
-        ApiResponse<BrandListResponse> getAllBrands = brandService.getAllBrand(pageNo, pageSize, sortBy, sortDir);
-        return ResponseEntity.status(HttpStatus.OK).body(getAllBrands);
+            @RequestParam(value = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER,required = false) Integer pageNo,
+            @RequestParam(value = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE,required = false) Integer pageSize,
+            @RequestParam(value = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY,required = false) String sortBy,
+            @RequestParam(value = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION,required = false) String sortDir) {
+        return ResponseEntity.status(HttpStatus.OK).body(brandService.getAllBrand(pageNo, pageSize, sortBy, sortDir));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BrandInfo>> getBrandById(@PathVariable("id") String brandId) {
-        ApiResponse<BrandInfo> getBrandById = brandService.getBrandById(brandId);
-        return ResponseEntity.status(HttpStatus.OK).body(getBrandById);
+        return ResponseEntity.status(HttpStatus.OK).body(brandService.getBrandById(brandId));
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<UpdateBrandResponse>> updateBrandById(
             @PathVariable("id") String brandId, @RequestBody UpdateBrandDto updateBrandDto) {
-        ApiResponse<UpdateBrandResponse> updateBrandById = brandService.updateBrandById(brandId, updateBrandDto);
-        return ResponseEntity.status(HttpStatus.OK).body(updateBrandById);
+        return ResponseEntity.status(HttpStatus.OK).body(brandService.updateBrandById(brandId, updateBrandDto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<DeleteBrandResponse>> softDeleteBrandById(@PathVariable("id") String brandId) {
-        ApiResponse<DeleteBrandResponse> softDeleteBrandById = brandService.softDeleteBrandById(brandId);
-        return ResponseEntity.status(HttpStatus.OK).body(softDeleteBrandById);
+        return ResponseEntity.status(HttpStatus.OK).body(brandService.softDeleteBrandById(brandId));
     }
 
     @PatchMapping("/reactive/{id}")
@@ -69,16 +59,10 @@ public class BrandController {
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<BrandListResponse>> searchBrandByName(
             @RequestParam(value = "name", required = false) String brandName,
-            @RequestParam(value = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER,
-                    required = false) Integer pageNo,
-            @RequestParam(value = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE,
-                    required = false) Integer pageSize,
-            @RequestParam(value = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY,
-                    required = false) String sortBy,
-            @RequestParam(value = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION,
-                    required = false) String sortDir
-    ) {
-        ApiResponse<BrandListResponse> searchBrandByName = brandService.searchBrandByName(brandName, pageNo, pageSize, sortBy, sortDir);
-        return ResponseEntity.status(HttpStatus.OK).body(searchBrandByName);
+            @RequestParam(value = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER,required = false) Integer pageNo,
+            @RequestParam(value = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE,required = false) Integer pageSize,
+            @RequestParam(value = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY,required = false) String sortBy,
+            @RequestParam(value = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION,required = false) String sortDir) {
+        return ResponseEntity.status(HttpStatus.OK).body(brandService.searchBrandByName(brandName, pageNo, pageSize, sortBy, sortDir));
     }
 }

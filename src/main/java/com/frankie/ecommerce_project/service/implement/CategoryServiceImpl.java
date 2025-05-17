@@ -43,14 +43,13 @@ public class CategoryServiceImpl implements CategoryService {
                 .isDeleted(false)
                 .build();
         categoryRepository.save(newCategory);
-        CreateCategoryResponse createCategoryResponse = CategoryMapper
-                .INSTANCE.toCreateCategoryResponse(newCategory);
+        CreateCategoryResponse createCategoryResponse = CategoryMapper.INSTANCE.toCreateCategoryResponse(newCategory);
         return ApiResponse.success("Category created successfully", HttpStatus.CREATED, createCategoryResponse);
     }
 
     @Override
     public ApiResponse<CategoryListResponse> getALlCategories(int pageNo, int pageSize, String sortBy,
-                                                              String sortDir) {
+            String sortDir) {
         Pageable pageable = BuildPageable.buildPageable(pageNo, pageSize, sortBy, sortDir);
         Page<Category> categories = categoryRepository.findAll(pageable);
         List<CategoryInfo> categoryInfoList = buildCategoryList(categories);
@@ -116,7 +115,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public ApiResponse<CategoryListResponse> searchCategoryByName(String categoryName, int pageNo, int pageSize,
-                                                                  String sortBy, String sortDir) {
+            String sortBy, String sortDir) {
         Pageable pageable = BuildPageable.buildPageable(pageNo, pageSize, sortBy, sortDir);
         Page<Category> categories = categoryRepository.searchByName(categoryName, pageable);
         List<CategoryInfo> categoryInfoList = buildCategoryList(categories);
@@ -124,7 +123,8 @@ public class CategoryServiceImpl implements CategoryService {
         return ApiResponse.success("Search category by name successfully", HttpStatus.OK, categoryListResponse);
     }
 
-    private CategoryListResponse buildCategoryListResponse(Page<Category> categories, List<CategoryInfo> categoryInfoList) {
+    private CategoryListResponse buildCategoryListResponse(Page<Category> categories,
+            List<CategoryInfo> categoryInfoList) {
         MetaData metaData = MetaData.builder()
                 .pageNo(categories.getNumber())
                 .pageSize(categories.getSize())

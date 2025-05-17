@@ -30,4 +30,5 @@ public class CreateUserResponse implements Serializable {
     private String createdBy;
     private Boolean isDeleted;
     private Boolean isActive;
+    private Boolean isVerified;
 }

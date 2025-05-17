@@ -18,6 +18,7 @@ import com.frankie.ecommerce_project.utils.apiResponse.MetaData;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -59,6 +60,7 @@ public class UserServiceImpl implements UserService {
                     .dateOfBirth(createUserDto.getDateOfBirth())
                     .isActive(true)
                     .isDeleted(false)
+                    .isVerified(true)
                     .build();
             userRepository.save(newUser);
             CreateUserResponse userDtoMapping = UserMapper.INSTANCE.toCreateUserResponse(newUser);

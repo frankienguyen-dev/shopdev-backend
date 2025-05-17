@@ -7,4 +7,5 @@ import com.frankie.ecommerce_project.utils.apiResponse.ApiResponse;
 public interface ProductService {
 
     ApiResponse<CreateProductResponse> createProduct(CreateProductDto product);
+
 }

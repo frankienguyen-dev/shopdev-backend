@@ -28,4 +28,5 @@ public class UpdateUserResponse implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant updatedAt;
     private String updatedBy;
+    private Boolean isVerified;
 }

@@ -34,4 +34,5 @@ public class UserInfo implements Serializable {
     private String updatedBy;
     private Boolean isDeleted;
     private Boolean isActive;
+    private Boolean isVerified;
 }
