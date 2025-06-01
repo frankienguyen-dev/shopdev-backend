@@ -29,4 +29,8 @@ public interface DeviceRepository extends JpaRepository<Device, String> {
      * @return List of active devices
      */
     List<Device> findByUserAndIsActiveTrue(User user);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Device d SET d.isActive = false WHERE d.user = :user")
+    void deactivateDevicesByUser(@Param("user") User user);
 }

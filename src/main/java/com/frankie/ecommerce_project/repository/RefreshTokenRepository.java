@@ -6,6 +6,7 @@ import com.frankie.ecommerce_project.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -30,15 +31,19 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Stri
     List<RefreshToken> findByUser(User user);
 
     /**
-     * Retrieves all refresh tokens for a device.
+     * Retrieves the refresh token associated with a device, if it exists.
      *
-     * @param device Device associated with the tokens
-     * @return List of refresh tokens
+     * @param device the device associated with the refresh token
+     * @return an Optional containing the refresh token, or empty if none exists
      */
-    List<RefreshToken> findByDevice(Device device);
+    Optional<RefreshToken> findByDevice(Device device);
 
 
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM RefreshToken rt WHERE rt.user = :user AND rt.device = :device")
     void deleteByUserAndDevice(User user, Device device);
+
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM RefreshToken rt WHERE rt.user = :user")
+    void deleteByUser(@Param("user") User user);
 }

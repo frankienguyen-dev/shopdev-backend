@@ -11,9 +11,10 @@ import java.util.Optional;
 
 public interface RoleRepository extends JpaRepository<Role, String> {
 
-    Optional<Role> findByName(String name);
+    @Query("SELECT DISTINCT r FROM Role r LEFT JOIN FETCH r.permissions WHERE r.name = :name")
+    Optional<Role> findByNameWithPermissions(String name);
 
-    @Query("SELECT r FROM Role r LEFT JOIN FETCH r.permissions WHERE r.id = :roleId")
+    @Query("SELECT DISTINCT r FROM Role r LEFT JOIN FETCH r.permissions WHERE r.id = :roleId")
     Optional<Role> findByIdWithPermissions(String roleId);
 
 }

@@ -210,12 +210,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Transactional(readOnly = true)
     @Override
     public ApiResponse<List<DeviceInfoResponse>> getActiveDevices(String email) {
-         User user = userRepository.findByEmail(email)
+         User user = userRepository.findByEmailWithRoles(email)
                  .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
          List<Device> devices = deviceRepository.findByUserAndIsActiveTrue(user);
          List<DeviceInfoResponse> deviceInfoResponses = devices.stream()
                  .map(device -> {
-                     Optional<RefreshToken> refreshToken = refreshTokenRepository.findByDevice(device).stream().findFirst();
+                     Optional<RefreshToken> refreshToken = refreshTokenRepository.findByDevice(device);
                      return DeviceInfoResponse.builder()
                              .userAgent(device.getUserAgent())
                              .ip(device.getIp())
@@ -466,7 +466,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * @return Optional containing the User, if found
      */
     private Optional<User> findUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmailWithRoles(email);
     }
 
     /**
@@ -518,7 +518,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * @throws ResourceNotFoundException If the default role is not found
      */
     private User createNewUser(RegisterDto registerDto) {
-        Role role = roleRepository.findByName(ROLE_USER)
+        Role role = roleRepository.findByNameWithPermissions(ROLE_USER)
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "name", ROLE_USER));
         Set<Role> roles = new HashSet<>();
         roles.add(role);
