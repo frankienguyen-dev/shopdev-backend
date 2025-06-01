@@ -56,7 +56,7 @@ public class JwtTokenProvider {
         Instant expiration = Instant.now().plus(accessTokenExpiration, ChronoUnit.MINUTES);
 
         String email = authentication.getName();
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("Email ", "email", email));
+        User user = userRepository.findByEmailWithRoles(email).orElseThrow(() -> new ResourceNotFoundException("Email ", "email", email));
 
         List<String> roleIds = user.getRoles().stream().map(role -> role.getId()).collect(Collectors.toList());
 

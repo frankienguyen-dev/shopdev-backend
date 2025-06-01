@@ -45,7 +45,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public ApiResponse<CreateRoleResponse> createNewRole(CreateRoleDto role) {
 
-        Optional<Role> findRoleByName = roleRepository.findByName(role.getName());
+        Optional<Role> findRoleByName = roleRepository.findByNameWithPermissions(role.getName());
 
         if (findRoleByName.isPresent()) {
             return ApiResponse.error("Role already exists", HttpStatus.BAD_REQUEST, null);
@@ -105,7 +105,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public ApiResponse<UpdateRoleResponse> updateRoleById(String roleId, UpdateRoleDto role) {
 
-        Optional<Role> existingRole = roleRepository.findByName(role.getName());
+        Optional<Role> existingRole = roleRepository.findByNameWithPermissions(role.getName());
 
         if (existingRole.isPresent() && !existingRole.get().getName().equalsIgnoreCase(role.getName())) {
             return ApiResponse.error("Role already exists", HttpStatus.BAD_REQUEST, null);
