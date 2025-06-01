@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -23,4 +24,8 @@ public class SecurityUtil {
         else if (authentication.getPrincipal() instanceof String str) return str;
         return null;
     }
+
+//    public List<String> getRoleIdsFromToken() {
+//
+//    }
 }
