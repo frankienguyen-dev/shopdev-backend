@@ -3,33 +3,46 @@ package com.frankie.ecommerce_project.service.implement;
 import com.frankie.ecommerce_project.dto.authentication.request.*;
 import com.frankie.ecommerce_project.dto.authentication.response.*;
 import com.frankie.ecommerce_project.exception.ResourceNotFoundException;
-import com.frankie.ecommerce_project.model.Role;
-import com.frankie.ecommerce_project.model.User;
-import com.frankie.ecommerce_project.model.VerificationCode;
-import com.frankie.ecommerce_project.repository.RoleRepository;
-import com.frankie.ecommerce_project.repository.UserRepository;
-import com.frankie.ecommerce_project.repository.VerificationCodeRepository;
+import com.frankie.ecommerce_project.model.*;
+import com.frankie.ecommerce_project.repository.*;
 import com.frankie.ecommerce_project.security.token.JwtTokenProvider;
 import com.frankie.ecommerce_project.service.AuthenticationService;
 import com.frankie.ecommerce_project.service.EmailService;
 import com.frankie.ecommerce_project.utils.VerificationType;
 import com.frankie.ecommerce_project.utils.apiResponse.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
+/**
+ * Service implementation for user authentication, handling login, registration, OTP verification,
+ * and multi-device session management.
+ */
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
+    private static final int OTP_EXPIRATION_SECONDS = 300; // 5 phút
+    private static final int MAX_OTP_ATTEMPTS = 5; // Số lần thử OTP tối đa
+    private static final long REFRESH_TOKEN_EXPIRY_SECONDS = 30L * 24 * 60 * 60; // 30 days
+    private static final String ROLE_USER = "ROLE_USER";
+    private static final String SUCCESS_LOGIN = "Login successful";
+    private static final String SUCCESS_OTP_VERIFIED = "OTP verification successful";
+    private static final String SUCCESS_PASSWORD_RESET = "Password reset successful";
+    private static final String SUCCESS_OTP_SENT = "OTP has been sent to your email";
+    private static final String SUCCESS_REGISTRATION = "Registration successful, please check your email for OTP";
 
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtTokenProvider securityUtils;
@@ -37,13 +50,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final VerificationCodeRepository verificationCodeRepository;
     private final EmailService emailService;
-
-    private static final int OTP_EXPIRATION_SECONDS = 300; // 5 phút
     private final RoleRepository roleRepository;
+    private final DeviceRepository deviceRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    public AuthenticationServiceImpl(AuthenticationManagerBuilder authenticationManagerBuilder, JwtTokenProvider securityUtils,
-                                     UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService,
-                                     VerificationCodeRepository verificationCodeRepository, RoleRepository roleRepository) {
+    /**
+     * Constructs AuthenticationServiceImpl with required dependencies.
+     *
+     * @param authenticationManagerBuilder Authentication manager for user verification
+     * @param securityUtils                Utility for JWT token creation
+     * @param userRepository               Repository for user data access
+     * @param passwordEncoder              Encoder for password hashing
+     * @param verificationCodeRepository   Repository for OTP verification codes
+     * @param refreshTokenRepository       Repository for refresh tokens
+     * @param deviceRepository             Repository for user devices
+     * @param emailService                 Service for sending emails
+     * @param roleRepository               Repository for user roles
+     */
+    public AuthenticationServiceImpl(AuthenticationManagerBuilder authenticationManagerBuilder,
+            JwtTokenProvider securityUtils,
+            UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService,
+            VerificationCodeRepository verificationCodeRepository, RoleRepository roleRepository,
+            DeviceRepository deviceRepository, RefreshTokenRepository refreshTokenRepository) {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.securityUtils = securityUtils;
         this.userRepository = userRepository;
@@ -51,279 +79,523 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         this.verificationCodeRepository = verificationCodeRepository;
         this.roleRepository = roleRepository;
         this.emailService = emailService;
+        this.deviceRepository = deviceRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
+    /**
+     * Authenticates a user, creates JWT and refresh tokens, and stores device information.
+     *
+     * @param loginDto Login credentials (email, password)
+     * @param request  HTTP request containing device information
+     * @return ApiResponse containing LoginResponse with access and refresh tokens
+     * @throws IllegalArgumentException If email or password is invalid
+     * @throws IllegalStateException   If the account is not verified
+     */
+    @Transactional
     @Override
-    public ApiResponse<LoginResponse> login(LoginDto loginDto) {
-        try {
-            Optional<User> userLogin = userRepository.findByEmail(loginDto.getEmail());
-            if (userLogin.isEmpty()
-                    || !passwordEncoder.matches(loginDto.getPassword(), userLogin.get().getPassword())) {
-                return ApiResponse.error("Email or password is incorrect", HttpStatus.BAD_REQUEST, null);
-            }
-            UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                    loginDto.getEmail(),
-                    loginDto.getPassword());
-            Authentication authentication = authenticationManagerBuilder.getObject()
-                    .authenticate(usernamePasswordAuthenticationToken);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String accessToken = securityUtils.createToken(authentication);
-            LoginResponse loginResponse = new LoginResponse(accessToken);
-            return ApiResponse.success("Login successfully", HttpStatus.OK, loginResponse);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw e;
+    public ApiResponse<LoginResponse> login(LoginDto loginDto, HttpServletRequest request) {
+        User user = validateUserCredentials(loginDto.getEmail(), loginDto.getPassword());
+        if (!user.getIsVerified()) {
+            throw new IllegalStateException("Account not verified, please verify OTP via email or request a new OTP");
         }
+        Authentication authentication = authenticateUser(loginDto.getEmail(), loginDto.getPassword());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String accessToken = securityUtils.createAccessToken(authentication);
+
+        String userAgent = request.getHeader("User-Agent") != null ? request.getHeader("User-Agent") : "Unknown";
+        String ipAddress = request.getRemoteAddr() != null ? request.getRemoteAddr() : "Unknown";
+
+        Device device = deviceRepository.findByUserAndUserAgent(user, userAgent)
+                .orElseGet(() -> Device.builder()
+                        .user(user)
+                        .userAgent(userAgent)
+                        .ip(ipAddress)
+                        .lastActive(Instant.now())
+                        .isActive(true)
+                        .createdAt(Instant.now())
+                        .build());
+        device.setLastActive(Instant.now());
+        device.setIsActive(true);
+        deviceRepository.save(device);
+        deviceRepository.flush();
+
+        refreshTokenRepository.deleteByUserAndDevice(user, device);
+
+
+        String refreshToken = securityUtils.createRefreshToken(user.getEmail());
+
+        RefreshToken refreshTokenEntity = RefreshToken.builder()
+                .user(user)
+                .device(device)
+                .token(refreshToken)
+                .expiredAt(Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRY_SECONDS))
+                .createdAt(Instant.now())
+                .build();
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        LoginResponse loginResponse = LoginResponse.builder().accessToken(accessToken).refreshToken(refreshToken)
+                .build();
+        return ApiResponse.success(SUCCESS_LOGIN, HttpStatus.OK, loginResponse);
     }
 
+
+    /**
+     * Refreshes an access token using a valid refresh token.
+     *
+     * @param refreshToken Current refresh token
+     * @param request      HTTP request containing device information
+     * @return ApiResponse containing RefreshTokenResponse with new access and refresh tokens
+     * @throws IllegalArgumentException If the refresh token is invalid
+     * @throws IllegalStateException   If the refresh token is expired
+     */
+    @Transactional
+    @Override
+    public ApiResponse<RefreshTokenResponse> refreshToken(String refreshToken, HttpServletRequest request) {
+        RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
+        if (token.getExpiredAt().isBefore(Instant.now())) {
+            throw new IllegalStateException("Refresh token is expired");
+        }
+        User user = token.getUser();
+        Device device = token.getDevice();
+        String ipAddress = request.getRemoteAddr() != null ? request.getRemoteAddr() : "Unknown";
+        device.setLastActive(Instant.now());
+        device.setIp(ipAddress);
+        deviceRepository.save(device);
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getEmail(), null,
+                getAuthorities(user));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String newAccessToken = securityUtils.createAccessToken(authentication);
+
+        String newRefreshToken = securityUtils.createRefreshToken(user.getEmail());
+        token.setToken(newRefreshToken);
+        token.setExpiredAt(Instant.now().plusSeconds(REFRESH_TOKEN_EXPIRY_SECONDS));
+        token.setCreatedAt(Instant.now());
+        refreshTokenRepository.save(token);
+
+        RefreshTokenResponse response = RefreshTokenResponse.builder().accessToken(newAccessToken)
+                .refreshToken(newRefreshToken).build();
+
+        return ApiResponse.success("Token refreshed successfully", HttpStatus.OK, response);
+    }
+
+    /**
+     * Signs out a user, deactivates the device, and deletes the refresh token.
+     *
+     * @param refreshToken Refresh token of the session
+     * @return ApiResponse indicating successful sign-out
+     * @throws IllegalArgumentException If the refresh token is invalid
+     */
+    @Transactional
+    @Override
+    public ApiResponse<Void> signout(String refreshToken) {
+        RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
+        Device device = token.getDevice();
+        device.setIsActive(false);
+        deviceRepository.save(device);
+        refreshTokenRepository.delete(token);
+        return ApiResponse.success("Signed out successfully", HttpStatus.OK, null);
+    }
+
+    /**
+     * Retrieves the list of active devices for a user.
+     *
+     * @param email User's email address
+     * @return ApiResponse containing a list of active devices
+     * @throws ResourceNotFoundException If the user is not found
+     */
+    @Transactional(readOnly = true)
+    @Override
+    public ApiResponse<List<DeviceInfoResponse>> getActiveDevices(String email) {
+         User user = userRepository.findByEmail(email)
+                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+         List<Device> devices = deviceRepository.findByUserAndIsActiveTrue(user);
+         List<DeviceInfoResponse> deviceInfoResponses = devices.stream()
+                 .map(device -> {
+                     Optional<RefreshToken> refreshToken = refreshTokenRepository.findByDevice(device).stream().findFirst();
+                     return DeviceInfoResponse.builder()
+                             .userAgent(device.getUserAgent())
+                             .ip(device.getIp())
+                             .lastActive(device.getLastActive())
+                             .isActive(device.getIsActive())
+                             .createdAt(device.getCreatedAt())
+                             .tokenExpiry(refreshToken.map(RefreshToken::getExpiredAt).orElse(null))
+                             .build();
+                 }).collect(Collectors.toList());
+        return ApiResponse.success("Active devices retrieved successfully", HttpStatus.OK, deviceInfoResponses);
+    }
+
+    /**
+     * Registers a new user and sends an OTP for verification.
+     *
+     * @param registerDto Registration details
+     * @return ApiResponse containing RegisterResponse
+     * @throws IllegalStateException If email is already registered
+     */
+    @Transactional
     @Override
     public ApiResponse<RegisterResponse> register(RegisterDto registerDto) {
-        try {
-            Optional<User> existingUser = userRepository.findByEmail(registerDto.getEmail());
-
-            if (existingUser.isPresent()) {
-                User user = existingUser.get();
-                if (user.getIsVerified()) {
-                    return ApiResponse.error("Email has been registered and verified", HttpStatus.BAD_REQUEST, null);
-                }
-                return createOrUpdateOtp(user, VerificationType.OTP_REGISTER, RegisterResponse.builder()
-                        .email(user.getEmail()).fullName(user.getFullName()).build());
-            }
-
-            // Kiểm tra type hợp lệ
-            VerificationType verificationType = VerificationType.OTP_REGISTER;
-            try {
-                VerificationType.valueOf(verificationType.name());
-            } catch (IllegalArgumentException e) {
-                return ApiResponse.error("Invalid verification type", HttpStatus.BAD_REQUEST, null);
-            }
-
-            // Gán vai trò mặc định (USER)
-            Optional<Role> findRole = roleRepository.findByName("ROLE_USER");
-            if (findRole.isEmpty()) {
-                return ApiResponse.error("Role not found", HttpStatus.BAD_REQUEST, null);
-            }
-            Set<Role> roles = new HashSet<>();
-            roles.add(findRole.get());
-
-            // Tạo người dùng mới
-            if(!registerDto.getPassword().equals(registerDto.getConfirmPassword())) {
-                return ApiResponse.error("The password and confirmation password do not match.", HttpStatus.BAD_REQUEST, null);
-            }
-
-            User user = User.builder()
-                    .fullName(registerDto.getFullName())
-                    .email(registerDto.getEmail())
-                    .password(passwordEncoder.encode(registerDto.getPassword()))
-                    .roles(roles)
-                    .isActive(true)
-                    .isDeleted(false)
-                    .createdBy(registerDto.getEmail())
-                    .isVerified(false)
-                    .build();
-
-            userRepository.save(user);
-
-            return createOrUpdateOtp(user, VerificationType.OTP_REGISTER, RegisterResponse.builder()
-                    .email(user.getEmail()).fullName(user.getFullName()).build());
-        } catch (Exception e) {
-            return ApiResponse.error("Error " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, null);
-        }
+        validateEmailNotRegistered(registerDto.getEmail());
+        validatePasswordMatch(registerDto.getPassword(), registerDto.getConfirmPassword());
+        User newUser = createNewUser(registerDto);
+        userRepository.save(newUser);
+        RegisterResponse response = RegisterResponse.builder()
+                .email(newUser.getEmail())
+                .fullName(newUser.getFullName())
+                .build();
+        return createOrUpdateOtp(newUser, VerificationType.OTP_REGISTER, response, true);
     }
 
+    /**
+     * Verifies an OTP for registration or password reset.
+     *
+     * @param otpVerificationDto OTP verification details
+     * @return ApiResponse containing OtpVerificationResponse
+     * @throws ResourceNotFoundException If user or OTP is not found
+     * @throws IllegalStateException     If OTP is invalid, expired, or max attempts exceeded
+     */
+    @Transactional
+    @Override
     public ApiResponse<OtpVerificationResponse> verifyOtp(OtpVerificationDto otpVerificationDto) {
-        try {
-            Optional<User> findUser = userRepository.findByEmail(otpVerificationDto.getEmail());
-            if (findUser.isEmpty()) {
-                throw new ResourceNotFoundException("User not found withd email", "email", otpVerificationDto.getEmail());
-            }
-            User user = findUser.get();
+        User user = findUserByEmail(otpVerificationDto.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", otpVerificationDto.getEmail()));
+        VerificationType verificationType = validateVerificationType(otpVerificationDto.getType());
+        VerificationCode verificationCode = findVerificationCode(user, verificationType)
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("OTP not found: ", "OTP", otpVerificationDto.getOtp()));
 
-            // Kiểm tra type hợp lệ
-            VerificationType verificationType;
-            try {
-                verificationType = VerificationType.valueOf(otpVerificationDto.getType());
-            } catch (IllegalArgumentException e) {
-                return ApiResponse.error("Type not found", HttpStatus.BAD_REQUEST, null);
-            }
+        if (verificationCode.getAttempts() >= MAX_OTP_ATTEMPTS) {
+            throw new IllegalStateException("Too many OTP attempts");
+        }
 
-            // Lấy mã OTP
-            VerificationCode verificationCode = verificationCodeRepository.findByUserAndType(user, verificationType).orElseThrow(
-                    () -> new ResourceNotFoundException("OTP not found: ", "OTP", otpVerificationDto.getOtp()));
+        if (isOtpExpired(verificationCode)) {
+            throw new IllegalStateException("OTP has expired, please request a new OTP");
+        }
 
-            // Kiểm tra OTP hết hạn
-            if (verificationCode.getExpirationTime().isBefore(Instant.now())) {
-                return ApiResponse.error("OTP has expired, please request new OTP", HttpStatus.BAD_REQUEST, null);
-            }
-
-            // Kiểm tra số lần thử
-            if (verificationCode.getAttempts() >= 5) {
-                return ApiResponse.error("Too many OTP attempts", HttpStatus.BAD_REQUEST, null);
-            }
-
-            // Xác minh OTP
-            if (!passwordEncoder.matches(otpVerificationDto.getOtp(), verificationCode.getHashedCode())) {
-                verificationCode.setAttempts(verificationCode.getAttempts() + 1);
-                verificationCodeRepository.save(verificationCode);
-                return ApiResponse.error("Invalid OTP", HttpStatus.BAD_REQUEST, null);
-            }
-
-            // Đánh dấu OTP đã được xác minh
-            verificationCode.setIsVerified(true);
+        if (!passwordEncoder.matches(otpVerificationDto.getOtp(), verificationCode.getHashedCode())) {
+            verificationCode.setAttempts(verificationCode.getAttempts() + 1);
             verificationCodeRepository.save(verificationCode);
-
-            // Xử lý theo loại OTP
-            if (VerificationType.OTP_REGISTER.equals(verificationType)) {
-                user.setIsVerified(true);
-                userRepository.save(user);
-                verificationCodeRepository.delete(verificationCode);
-            } else if (VerificationType.OTP_FORGOT_PASSWORD.equals(verificationType)) {
-                // Không xóa VerificationCode ngay, để resetPassword kiểm tra
-
-            } else {
-                return ApiResponse.error("OTP is not supported", HttpStatus.BAD_REQUEST, null);
-            }
-
-            return ApiResponse.success("OTP verification successful", HttpStatus.OK,
-                    OtpVerificationResponse.builder().message("OTP verification successful").build());
-        } catch (Exception e) {
-            return ApiResponse.error("Error: " + e.getMessage(), HttpStatus.BAD_REQUEST, null);
+            throw new IllegalStateException("Invalid OTP");
         }
-    }
 
+        verificationCode.setIsVerified(true);
+        verificationCodeRepository.save(verificationCode);
 
-    public ApiResponse<ForgotPasswordResponse> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
-        try {
-            Optional<User> findUser = userRepository.findByEmail(forgotPasswordDto.getEmail());
-            if (findUser.isEmpty()) {
-                throw new ResourceNotFoundException("User not found with email", "email", forgotPasswordDto.getEmail());
-            }
-
-            // Kiểm tra type hợp lệ
-            VerificationType verificationType = VerificationType.OTP_FORGOT_PASSWORD;
-            try {
-                VerificationType.valueOf(verificationType.name());
-            } catch (IllegalArgumentException e) {
-                return ApiResponse.error("Type not found", HttpStatus.BAD_REQUEST, null);
-            }
-
-
-            return createOrUpdateOtp(findUser.get(), verificationType, ForgotPasswordResponse.builder().message("OTP has been sent to your email").build());
-        } catch (Exception e) {
-            return ApiResponse.error("Error: " + e.getMessage(), HttpStatus.BAD_REQUEST, null);
-        }
-    }
-
-    public ApiResponse<ResendOtpResponse> resendOtp(ResendOtpDto resendOtpDto) {
-        try {
-            Optional<User> findUser = userRepository.findByEmail(resendOtpDto.getEmail());
-
-            if (findUser.isEmpty()) {
-                throw new ResourceNotFoundException("User not found with email", "email", resendOtpDto.getEmail());
-            }
-
-            // Kiểm tra type hợp lệ
-            VerificationType verificationType;
-            try {
-                verificationType = VerificationType.valueOf(resendOtpDto.getType());
-            } catch (IllegalArgumentException e) {
-                return ApiResponse.error("Type not found", HttpStatus.BAD_REQUEST, null);
-            }
-
-            // Nếu là OTP_REGISTER, kiểm tra chưa xác minh
-            if (VerificationType.OTP_REGISTER.equals(verificationType) && findUser.get().getIsVerified()) {
-                return ApiResponse.error("Verified account", HttpStatus.BAD_REQUEST, null);
-            }
-
-            return createOrUpdateOtp(findUser.get(), verificationType, ResendOtpResponse.builder().message("OTP has been sent to your email").build());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public ApiResponse<ResetPasswordResponse> resetPassword(ResetPasswordDto resetPasswordDto) {
-        try {
-            Optional<User> findUser = userRepository.findByEmail(resetPasswordDto.getEmail());
-            if (findUser.isEmpty()) {
-                throw new ResourceNotFoundException("User not found with email", "email", resetPasswordDto.getEmail());
-            }
-            User user = findUser.get();
-
-
-            // Kiểm tra trạng thái xác minh OTP
-            VerificationCode verificationCode = verificationCodeRepository.findByUserAndType(user, VerificationType.OTP_FORGOT_PASSWORD)
-                    .orElseThrow(() -> new RuntimeException("OTP verification not available to reset password"));
-
-
-            if(!verificationCode.getIsVerified()) {
-                return ApiResponse.error("OTP not verified", HttpStatus.BAD_REQUEST, null);
-            }
-
-            // Kiểm tra OTP còn hiệu lực
-            if (verificationCode.getExpirationTime().isBefore(Instant.now())) {
-                return ApiResponse.error("OTP has expired, please request new OTP", HttpStatus.BAD_REQUEST, null);
-            }
-
-            // Cập nhật mật khẩu
-            if (!resetPasswordDto.getPassword().equals(resetPasswordDto.getConfirmPassword())) {
-                return ApiResponse.error("The password and confirmation password do not match.", HttpStatus.BAD_REQUEST, null);
-            }
-
-            user.setPassword(passwordEncoder.encode(resetPasswordDto.getPassword()));
-            user.setUpdatedBy(user.getEmail());
+        if (VerificationType.OTP_REGISTER.equals(verificationType)) {
+            user.setIsVerified(true);
             userRepository.save(user);
             verificationCodeRepository.delete(verificationCode);
-
-            return ApiResponse.success("Password reset successful", HttpStatus.OK, ResetPasswordResponse.builder()
-                    .message("Password reset successful").build());
-        } catch (Exception e) {
-            return ApiResponse.error("Error: " + e.getMessage(), HttpStatus.BAD_REQUEST, null);
         }
+
+        OtpVerificationResponse response = OtpVerificationResponse.builder()
+                .message("OTP verification successful")
+                .build();
+
+        return ApiResponse.success(SUCCESS_OTP_VERIFIED, HttpStatus.OK, response);
     }
 
+    /**
+     * Initiates the forgot password process by sending an OTP.
+     *
+     * @param forgotPasswordDto Forgot password details
+     * @return ApiResponse containing ForgotPasswordResponse
+     * @throws ResourceNotFoundException If user is not found
+     */
+    @Transactional
+    @Override
+    public ApiResponse<ForgotPasswordResponse> forgotPassword(ForgotPasswordDto forgotPasswordDto) {
+        User user = findUserByEmail(forgotPasswordDto.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", forgotPasswordDto.getEmail()));
 
-    private <T> ApiResponse<T> createOrUpdateOtp(User user, VerificationType verificationType, T response) {
-        // 1. Tạo mới mã OTP
+        VerificationType verificationType = validateVerificationType(VerificationType.OTP_FORGOT_PASSWORD.name());
+
+        ForgotPasswordResponse response = ForgotPasswordResponse.builder()
+                .message("OTP has been sent to your email")
+                .build();
+
+        return createOrUpdateOtp(user, verificationType, response, false);
+    }
+
+    /**
+     * Resends an OTP for registration or password reset.
+     *
+     * @param resendOtpDto Resend OTP details
+     * @return ApiResponse containing ResendOtpResponse
+     * @throws ResourceNotFoundException If user is not found
+     * @throws IllegalStateException     If OTP cannot be resent
+     */
+    @Transactional
+    @Override
+    public ApiResponse<ResendOtpResponse> resendOtp(ResendOtpDto resendOtpDto) {
+        User user = findUserByEmail(resendOtpDto.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Email", "email", resendOtpDto.getEmail()));
+
+        VerificationType verificationType = validateVerificationType(resendOtpDto.getType());
+
+        if (VerificationType.OTP_REGISTER.equals(verificationType) && user.getIsVerified()) {
+            throw new IllegalStateException("User already verified, cannot resend OTP for registration");
+        }
+        if (VerificationType.OTP_FORGOT_PASSWORD.equals(verificationType)) {
+            if (!user.getIsVerified()) {
+                throw new IllegalStateException("User not verified, cannot resend OTP for forgot password");
+            }
+            Optional<VerificationCode> existingCode = findVerificationCode(user, verificationType);
+            if (existingCode.isEmpty()) {
+                throw new IllegalStateException(
+                        "No active forgot password OTP found, please initiate forgot password process first");
+            }
+        }
+
+        ResendOtpResponse response = ResendOtpResponse.builder()
+                .message("OTP has been sent to your email")
+                .build();
+
+        return createOrUpdateOtp(user, verificationType, response, false);
+    }
+
+    /**
+     * Resets a user's password after OTP verification.
+     *
+     * @param resetPasswordDto Reset password details
+     * @return ApiResponse containing ResetPasswordResponse
+     * @throws ResourceNotFoundException If user or OTP is not found
+     * @throws IllegalStateException     If OTP is not verified or expired
+     */
+    @Transactional
+    @Override
+    public ApiResponse<ResetPasswordResponse> resetPassword(ResetPasswordDto resetPasswordDto) {
+        User user = findUserByEmail(resetPasswordDto.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", resetPasswordDto.getEmail()));
+
+        VerificationCode verificationCode = findVerificationCode(user, VerificationType.OTP_FORGOT_PASSWORD)
+                .orElseThrow(() -> new IllegalStateException("No valid OTP found for password reset"));
+
+        if (!verificationCode.getIsVerified()) {
+            throw new IllegalStateException("OTP not verified");
+        }
+
+        if (isOtpExpired(verificationCode)) {
+            throw new IllegalStateException("OTP has expired, please request a new OTP");
+        }
+
+        validatePasswordMatch(resetPasswordDto.getPassword(), resetPasswordDto.getConfirmPassword());
+        user.setPassword(passwordEncoder.encode(resetPasswordDto.getPassword()));
+        user.setUpdatedBy(user.getEmail());
+        userRepository.save(user);
+        verificationCodeRepository.delete(verificationCode);
+
+        ResetPasswordResponse response = ResetPasswordResponse.builder()
+                .message(SUCCESS_PASSWORD_RESET)
+                .build();
+
+        return ApiResponse.success("Password reset successful", HttpStatus.OK, response);
+    }
+
+    /**
+     * Creates or updates an OTP for a user and sends it via email.
+     *
+     * @param user             User associated with the OTP
+     * @param verificationType OTP type (e.g., OTP_REGISTER, OTP_FORGOT_PASSWORD)
+     * @param response         Response object to return
+     * @param isNewUser        Indicates if this is a new user registration
+     * @param <T>              Generic type for response
+     * @return ApiResponse containing the response object
+     * @throws IllegalStateException If the user's state is invalid for the OTP type
+     */
+    @Transactional
+    protected  <T> ApiResponse<T> createOrUpdateOtp(User user, VerificationType verificationType, T response, boolean isNewUser) {
+        validateUserForOtp(user, verificationType);
+
         String otp = generateOtp();
         String hashedOtp = passwordEncoder.encode(otp);
 
-        // 2. Kiểm tra xem đã có VerificationCode chưa
-        Optional<VerificationCode> existingCode = verificationCodeRepository.findByUserAndType(user, verificationType);
-        VerificationCode verificationCode;
-        if (existingCode.isPresent()) {
-            // Cập nhật mã OTP
-            verificationCode = existingCode.get();
-            verificationCode.setHashedCode(hashedOtp);
-            verificationCode.setExpirationTime(Instant.now().plusSeconds(OTP_EXPIRATION_SECONDS));
-            verificationCode.setAttempts(0);
-        } else {
-            verificationCode = VerificationCode.builder()
-                    .hashedCode(hashedOtp)
-                    .expirationTime(Instant.now().plusSeconds(300))
-                    .attempts(0)
-                    .user(user)
-                    .type(verificationType)
-                    .isVerified(false)
-                    .build();
-        }
+        VerificationCode verificationCode = findVerificationCode(user, verificationType)
+                .orElseGet(() -> VerificationCode.builder()
+                        .user(user)
+                        .type(verificationType)
+                        .isVerified(false)
+                        .build());
+        verificationCode.setHashedCode(hashedOtp);
+        verificationCode.setAttempts(0);
+        verificationCode.setExpirationTime(Instant.now().plusSeconds(OTP_EXPIRATION_SECONDS));
         verificationCodeRepository.save(verificationCode);
 
         emailService.sendOtpEmail(user.getEmail(), otp, verificationType);
 
-        String message = VerificationType.OTP_REGISTER.equals(verificationType)
-                ? "Registration successful, please check your email for OTP"
-                : "OTP has been sent to your email";
-        System.out.println(verificationType.name());
-
-        HttpStatus httpStatus = VerificationType.OTP_REGISTER.equals(verificationType) ? HttpStatus.CREATED : HttpStatus.OK;
+        String message = VerificationType.OTP_REGISTER.equals(verificationType) ? SUCCESS_REGISTRATION
+                : SUCCESS_OTP_SENT;
+        HttpStatus httpStatus = (VerificationType.OTP_REGISTER.equals(verificationType) && isNewUser)
+                ? HttpStatus.CREATED
+                : HttpStatus.OK;
 
         return ApiResponse.success(message, httpStatus, response);
 
     }
 
+    /**
+     * Generates a random 6-digit OTP.
+     *
+     * @return Generated OTP as a string
+     */
     private String generateOtp() {
         SecureRandom random = new SecureRandom();
         return String.format("%06d", random.nextInt(1000000));
     }
 
+    /**
+     * Validates user credentials.
+     *
+     * @param email    User's email
+     * @param password User's password
+     * @return Validated User object
+     * @throws IllegalArgumentException If credentials are invalid
+     */
+    private User validateUserCredentials(String email, String password) {
+        Optional<User> findUser = findUserByEmail(email);
+        return findUser.filter(user -> passwordEncoder.matches(password, user.getPassword()))
+                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+    }
+
+    /**
+     * Finds a user by email.
+     *
+     * @param email User's email
+     * @return Optional containing the User, if found
+     */
+    private Optional<User> findUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    /**
+     * Authenticates a user with provided credentials.
+     *
+     * @param email    User's email
+     * @param password User's password
+     * @return Authentication object
+     */
+    private Authentication authenticateUser(String email, String password) {
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(email,
+                password);
+        return authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+    }
+
+    /**
+     * Validates that an email is not already registered.
+     *
+     * @param email Email to check
+     * @throws IllegalStateException If email is registered or not verified
+     */
+    private void validateEmailNotRegistered(String email) {
+        Optional<User> existingUser = findUserByEmail(email);
+        if (existingUser.isPresent()) {
+            User user = existingUser.get();
+            if (user.getIsVerified())
+                throw new IllegalStateException("Email has been registered and verified");
+            throw new IllegalStateException("User not verified, cannot create OTP for forgot password");
+        }
+    }
+
+    /**
+     * Validates that password and confirmation password match.
+     *
+     * @param password        Password
+     * @param confirmPassword Confirmation password
+     * @throws IllegalArgumentException If passwords do not match
+     */
+    private void validatePasswordMatch(String password, String confirmPassword) {
+        if (!password.equals(confirmPassword))
+            throw new IllegalArgumentException("The password and confirmation password do not match");
+    }
+
+    /**
+     * Creates a new user from registration details.
+     *
+     * @param registerDto Registration details
+     * @return Created User object
+     * @throws ResourceNotFoundException If the default role is not found
+     */
+    private User createNewUser(RegisterDto registerDto) {
+        Role role = roleRepository.findByName(ROLE_USER)
+                .orElseThrow(() -> new ResourceNotFoundException("Role", "name", ROLE_USER));
+        Set<Role> roles = new HashSet<>();
+        roles.add(role);
+        return User.builder()
+                .fullName(registerDto.getFullName())
+                .email(registerDto.getEmail())
+                .password(passwordEncoder.encode(registerDto.getPassword()))
+                .roles(roles)
+                .isActive(true)
+                .isDeleted(false)
+                .createdBy(registerDto.getEmail())
+                .isVerified(false)
+                .build();
+    }
+
+    /**
+     * Validates the OTP verification type.
+     *
+     * @param type Verification type
+     * @return Valid VerificationType enum
+     * @throws IllegalArgumentException If type is invalid
+     */
+    private VerificationType validateVerificationType(String type) {
+        try {
+            return VerificationType.valueOf(type);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid verification type: " + type);
+        }
+    }
+
+    /**
+     * Finds a verification code for a user and type.
+     *
+     * @param user User associated with the OTP
+     * @param type Verification type
+     * @return Optional containing the VerificationCode, if found
+     */
+    private Optional<VerificationCode> findVerificationCode(User user, VerificationType type) {
+        return verificationCodeRepository.findByUserAndType(user, type);
+    }
+
+    /**
+     * Checks if an OTP has expired.
+     *
+     * @param verificationCode Verification code to check
+     * @return True if expired, false otherwise
+     */
+    private boolean isOtpExpired(VerificationCode verificationCode) {
+        return verificationCode.getExpirationTime().isBefore(Instant.now());
+    }
+
+    /**
+     * Validates user eligibility for OTP creation.
+     *
+     * @param user User to validate
+     * @param type Verification type
+     * @throws IllegalStateException If user state is invalid
+     */
+    private void validateUserForOtp(User user, VerificationType type) {
+        if (VerificationType.OTP_REGISTER.equals(type) && user.getIsVerified()) {
+            throw new IllegalStateException("User already verified, cannot create OTP for registration");
+        }
+        if (VerificationType.OTP_FORGOT_PASSWORD.equals(type) && !user.getIsVerified()) {
+            throw new IllegalStateException("User not verified, cannot create OTP for forgot password");
+        }
+    }
+
+    /**
+     * Retrieves authorities for a user based on their roles and permissions.
+     *
+     * @param user User to retrieve authorities for
+     * @return Collection of GrantedAuthority objects containing permissions
+     */
+    private Collection<? extends GrantedAuthority> getAuthorities(User user) {
+        return user.getRoles().stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .map(permission -> new SimpleGrantedAuthority(permission.getName()))
+                .collect(Collectors.toList());
+    }
 }

@@ -43,6 +43,7 @@ public class RoleController {
         return ResponseEntity.status(HttpStatus.OK).body(allRoles);
     }
 
+    @PreAuthorize("hasAuthority('GET_ROLE_BY_ID')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<RoleInfo>> getRoleById(@PathVariable("id") String roleId) {
         ApiResponse<RoleInfo> getRoleById = roleService.getRoleById(roleId);

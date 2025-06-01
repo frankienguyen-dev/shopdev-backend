@@ -1,15 +1,9 @@
 package com.frankie.ecommerce_project.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.frankie.ecommerce_project.security.SecurityUtil;
-import com.frankie.ecommerce_project.security.token.JwtTokenProvider;
-
-import jakarta.annotation.PreDestroy;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
 

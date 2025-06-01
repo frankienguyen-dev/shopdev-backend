@@ -22,7 +22,6 @@ import java.util.UUID;
 @SuperBuilder
 @MappedSuperclass
 public abstract class BaseEntity {
-
     @Id
     private String id;
 
@@ -39,7 +38,7 @@ public abstract class BaseEntity {
     private Boolean isDeleted = false;
 
     @PrePersist
-    private void handleCreateBrand() {
+    private void handleCreate() {
         this.id = generateId();
         this.createdAt = Instant.now();
         if (this.createdBy == null || this.createdBy.isEmpty()) {
@@ -50,7 +49,7 @@ public abstract class BaseEntity {
     }
 
     @PreUpdate
-    private void handleUpdateBrand() {
+    private void handleUpdate() {
         this.updatedAt = Instant.now();
         if (this.createdBy == null || this.createdBy.isEmpty()) {
             this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent()
