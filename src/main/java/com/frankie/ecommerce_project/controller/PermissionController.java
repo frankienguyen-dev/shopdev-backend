@@ -23,20 +23,35 @@ import com.frankie.ecommerce_project.service.PermissionService;
 import com.frankie.ecommerce_project.utils.AppConstants;
 import com.frankie.ecommerce_project.utils.apiResponse.ApiResponse;
 
+/**
+ * Controller for handling permission management requests, including creating, updating, and retrieving permission information.
+ */
 @RestController
 @RequestMapping("api/v1/permissions")
 public class PermissionController {
 
     private final PermissionService permissionService;
 
+    /**
+     * Constructs a new PermissionController with the specified service.
+     *
+     * @param permissionService Service for handling permission-related logic
+     */
     public PermissionController(PermissionService permissionService) {
         this.permissionService = permissionService;
     }
 
 
+    /**
+     * Creates a new permission with the provided details.
+     * Restricted to 'ADMIN' role for security.
+     *
+     * @param createPermissionDto Permission creation details
+     * @return ResponseEntity with ApiResponse containing CreatePermissionResponse
+     */
     @PostMapping
-    public ResponseEntity<ApiResponse<CreatePermissionResponse>> createPermission(@RequestBody CreatePermissionDto permission) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(permissionService.createPermission(permission));
+    public ResponseEntity<ApiResponse<CreatePermissionResponse>> createPermission(@RequestBody CreatePermissionDto createPermissionDto) {
+        return buildResponse(permissionService.createPermission(createPermissionDto));
     }
 
 
@@ -66,5 +81,16 @@ public class PermissionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<DeletePermissionResponse>> deletePermissionById(@PathVariable("id") String permissionId) {
         return ResponseEntity.status(HttpStatus.OK).body(permissionService.deletePermissionById(permissionId));
+    }
+
+    /**
+     * Builds a ResponseEntity from an ApiResponse.
+     *
+     * @param <T>         Type of the response data
+     * @param apiResponse ApiResponse containing data and status
+     * @return ResponseEntity with status and body
+     */
+    private <T> ResponseEntity<ApiResponse<T>> buildResponse(ApiResponse<T> apiResponse) {
+        return ResponseEntity.status(apiResponse.getStatusCode()).body(apiResponse);
     }
 }

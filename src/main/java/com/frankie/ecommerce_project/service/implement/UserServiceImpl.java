@@ -93,9 +93,7 @@ public class UserServiceImpl implements UserService {
      * @throws ResourceNotFoundException if a role is not found
      */
     private Set<Role> buildRoleList(Set<RoleName> roleNames) {
-        if (roleNames == null || roleNames.isEmpty()) {
-            return new HashSet<>();
-        }
+        if (roleNames == null || roleNames.isEmpty()) return new HashSet<>();
         return roleNames.stream()
                 .map(roleName -> roleRepository.findByNameWithPermissions(roleName.getName())
                         .orElseThrow(() -> new ResourceNotFoundException("Role", "name", roleName.getName())))
@@ -168,11 +166,8 @@ public class UserServiceImpl implements UserService {
         user.setIsDeleted(true);
         user.setIsActive(false);
         userRepository.save(user);
-
         refreshTokenRepository.deleteByUser(user);
-
         deviceRepository.deactivateDevicesByUser(user);
-
         DeleteUserResponse response = buildDeleteUserResponse(user);
         return ApiResponse.success(SUCCESS_MESSAGE_DELETE, HttpStatus.OK, response);
     }
@@ -265,6 +260,13 @@ public class UserServiceImpl implements UserService {
         });
     }
 
+    /**
+     * Builds a new User entity from the provided CreateUserDto and roles.
+     *
+     * @param createUserDto DTO containing user creation details
+     * @param roles         Set of roles to assign to the user
+     * @return User entity with initialized fields
+     */
     private User buildNewUser(CreateUserDto createUserDto, Set<Role> roles) {
         return User.builder()
                 .id(createUserDto.getId())

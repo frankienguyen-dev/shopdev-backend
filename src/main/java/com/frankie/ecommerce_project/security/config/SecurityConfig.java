@@ -100,10 +100,7 @@ public class SecurityConfig {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(token -> {
             List<String> roleIds = token.getClaim("roleIds");
-            if (roleIds == null || roleIds.isEmpty()) {
-                return Collections.emptyList();
-            }
-            System.out.println(roleIds);
+            if (roleIds == null || roleIds.isEmpty()) return Collections.emptyList();
             return roleIds.stream()
                     .map(roleId -> roleRepository.findByIdWithPermissions(roleId)
                             .orElseThrow(() -> new ResourceNotFoundException("Role id", "id", roleId)))

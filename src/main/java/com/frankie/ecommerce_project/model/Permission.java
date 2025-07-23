@@ -4,10 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.util.HashSet;
@@ -30,6 +27,7 @@ public class Permission extends BaseEntity {
 
     private String module;
 
+    @ToString.Exclude
     @ManyToMany(fetch = FetchType.LAZY, mappedBy = "permissions")
     private Set<Role> roles = new HashSet<>();
 }
