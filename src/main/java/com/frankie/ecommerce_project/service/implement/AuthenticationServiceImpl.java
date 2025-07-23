@@ -407,6 +407,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      */
     @Transactional
     protected  <T> ApiResponse<T> createOrUpdateOtp(User user, VerificationType verificationType, T response, boolean isNewUser) {
+
         validateUserForOtp(user, verificationType);
 
         String otp = generateOtp();
@@ -514,7 +515,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * Creates a new user from registration details.
      *
      * @param registerDto Registration details
-     * @return Created User object
+     * @return Created a User object
      * @throws ResourceNotFoundException If the default role is not found
      */
     private User createNewUser(RegisterDto registerDto) {

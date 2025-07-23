@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PermissionRepository extends JpaRepository<Permission, String> {
+    Optional<Permission> findByName(String permissionName);
 
-    Optional<Permission> findByName(String perrmissionName);
+    @Query("SELECT p FROM Permission p WHERE p.name IN :names")
+    List<Permission> findByNameIn(List<String> names);
 
 }

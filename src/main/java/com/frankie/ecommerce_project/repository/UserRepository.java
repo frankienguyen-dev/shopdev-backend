@@ -21,6 +21,6 @@ public interface UserRepository extends JpaRepository<User, String> {
     Page<User> findAllWithRoles(Pageable pageable);
 
     @Query("SELECT DISTINCT u FROM User  u LEFT JOIN FETCH u.roles WHERE u.id = :userId")
-    Optional<User> findByIdWithRoles(@NonNull String userId);
+    Optional<User> findByIdWithRoles(String userId);
 
 }
